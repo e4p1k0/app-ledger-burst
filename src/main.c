@@ -25,7 +25,7 @@
 #include "ux.h"
 
 #include "config.h"
-#include "ardor.h"
+#include "burst.h"
 #include "returnValues.h"
 
 ux_state_t G_ux;
@@ -33,7 +33,7 @@ bolos_ux_params_t G_ux_params;
 
 UX_STEP_NOCB(
     ux_idle_flow_1_step, 
-    bn, 
+    nn, 
     {
       "Application",
       "is ready",
@@ -79,7 +79,7 @@ void ui_idle() {
 #define INS_AUTH_SIGN_TXN  					0x03
 #define INS_ENCRYPT_DECRYPT_MSG				0x04
 #define INS_SHOW_ADDRESS 					0x05
-#define INS_GET_PUBLIC_KEY_AND_CHAIN_CODE 	0x06
+#define INS_GET_PUBLIC_KEY					0x06
 #define INS_SIGN_TOKEN						0x07
 
 // This is the function signature for a command handler. 'flags' and 'tx' are
@@ -90,7 +90,7 @@ handler_fn_t getVersionHandler;
 handler_fn_t authAndSignTxnHandler;
 handler_fn_t encryptDecryptMessageHandler;
 handler_fn_t showAddressHandler;
-handler_fn_t getPublicKeyAndChainCodeHandler;
+handler_fn_t getPublicKeyHandler;
 handler_fn_t signTokenMessageHandler;
 
 //function translate command ID to function PTR
@@ -100,7 +100,7 @@ static handler_fn_t* lookupHandler(uint8_t ins) {
 	case INS_AUTH_SIGN_TXN:   					return authAndSignTxnHandler;
 	case INS_ENCRYPT_DECRYPT_MSG:				return encryptDecryptMessageHandler;
 	case INS_SHOW_ADDRESS:						return showAddressHandler;
-	case INS_GET_PUBLIC_KEY_AND_CHAIN_CODE: 	return getPublicKeyAndChainCodeHandler;
+	case INS_GET_PUBLIC_KEY:				 	return getPublicKeyHandler;
 	case INS_SIGN_TOKEN:						return signTokenMessageHandler;
 	default:                 		return NULL;
 	}
@@ -135,7 +135,7 @@ void fillBufferWithAnswerAndEnding(const uint8_t answer, uint8_t * const tx) {
 // subsequent io_exchange call. The handler may also throw an exception, which
 // will be caught, converted to an error code, appended to the response APDU,
 // and sent in the next io_exchange call.
-static void ardor_main(void) {
+static void burst_main(void) {
 
 	lastCmdNumber = 0;
 
@@ -165,7 +165,7 @@ static void ardor_main(void) {
 
 				// No APDU received; trigger a reset.
 				if (rx == 0) {
-					THROW(EXCEPTION_IO_RESET); //lastCmdNumber will be zero'd when ardor_main will be called again
+					THROW(EXCEPTION_IO_RESET); //lastCmdNumber will be zero'd when burst_main will be called again
 				}
 				// Malformed APDU.
 				if (CLA != G_io_apdu_buffer[OFFSET_CLA]) {
@@ -182,7 +182,7 @@ static void ardor_main(void) {
 					continue;
 				}
 
-				PRINTF("\n canery check %d last command number %d \n", check_canary(), lastCmdNumber);
+				PRINTF("\n canary check %d last command number %d \n", check_canary(), lastCmdNumber);
 
 				uint8_t lastCommandSaver = G_io_apdu_buffer[OFFSET_INS]; //the handler is going to write over the buffer, so the command needs to be put aside
 
@@ -192,7 +192,7 @@ static void ardor_main(void) {
 				lastCmdNumber = lastCommandSaver;
 			}
 			CATCH(EXCEPTION_IO_RESET) {
-				THROW(EXCEPTION_IO_RESET); //lastCmdNumber will be zero'd when ardor_main will be called again
+				THROW(EXCEPTION_IO_RESET); //lastCmdNumber will be zero'd when burst_main will be called again
 			}
 			CATCH_OTHER(e) {
 
@@ -346,16 +346,14 @@ __attribute__((section(".boot"))) int main(void) {
 				USB_power(1);
 				ui_idle();
 
-				PRINTF("aasdasd ardor");
-				
+				PRINTF("app burst started");
 
 				#ifdef HAVE_BLE
             		BLE_power(0, NULL);
             		BLE_power(1, "Nano X");
 				#endif // HAVE_BLE
 
-            	ardor_main();
-
+            	burst_main();
 			}
 			CATCH(EXCEPTION_IO_RESET) {
 				// reset IO and UX before continuing

@@ -1,6 +1,10 @@
 
 bin/
 
+dev-env/
+
+ledger/
+
 debug/
 
 dep/
@@ -13,5 +17,4 @@ src/glyphs\.h
 
 usbtool/
 
-src/txnTypeLists.c
 .vscode/

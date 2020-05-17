@@ -25,7 +25,7 @@
 
 #include "returnValues.h"
 #include "config.h"
-#include "ardor.h"
+#include "burst.h"
 
 
 //done button callback
@@ -76,27 +76,13 @@ void reedSolomonEncode(const uint64_t inp, char * const output);
 void showAddressHandlerHelper(const uint8_t p1, const uint8_t p2, const uint8_t * const dataBuffer, const uint8_t dataLength,
         uint8_t * const flags, uint8_t * const tx) {
 
-    UNUSED(p1); UNUSED(p2); UNUSED(flags);
-
-    if ((MIN_DERIVATION_LENGTH * sizeof(uint32_t) > dataLength) || (MAX_DERIVATION_LENGTH * sizeof(uint32_t) < dataLength)) {
-        G_io_apdu_buffer[(*tx)++] = R_WRONG_SIZE_ERR;
-        return;
-    }
-
-    uint8_t derivationParamLengthInBytes = dataLength;
-
-    if (0 != derivationParamLengthInBytes % sizeof(uint32_t)) {
-        G_io_apdu_buffer[(*tx)++] = R_UNKNOWN_CMD_PARAM_ERR;
-        return;
-    }
-    
-    G_io_apdu_buffer[(*tx)++] = R_SUCCESS;
+    UNUSED(p1);
 
     uint16_t exception = 0;
 
     uint8_t publicKey[32]; os_memset(publicKey, 0, sizeof(publicKey));
 
-    uint8_t ret = ardorKeys(dataBuffer, derivationParamLengthInBytes / sizeof(uint32_t), 0, publicKey, 0, 0, &exception); //derivationParamLengthInBytes should devied by 4, it's checked above
+    uint8_t ret = burstKeys(p2, 0, publicKey, 0, &exception);
 
     if (R_SUCCESS == ret) {
         os_memset(screenContent, 0, sizeof(screenContent));
@@ -104,16 +90,10 @@ void showAddressHandlerHelper(const uint8_t p1, const uint8_t p2, const uint8_t 
         reedSolomonEncode(publicKeyToId(publicKey), screenContent + strlen(screenContent));
         showScreen();
         *flags |= IO_ASYNCH_REPLY;
-    } else if (R_KEY_DERIVATION_EX == ret) {
-        G_io_apdu_buffer[0] = ret;
-        G_io_apdu_buffer[1] = exception >> 8;
-        G_io_apdu_buffer[2] = exception & 0xFF;
-        *tx = 3;
-        return;
+        G_io_apdu_buffer[(*tx)++] = R_SUCCESS;
     } else {
         G_io_apdu_buffer[0] = ret;
         *tx = 1;
-        return;
     }
 }
 

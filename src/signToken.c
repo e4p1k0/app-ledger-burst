@@ -27,7 +27,7 @@
 
 #include "returnValues.h"
 #include "config.h"
-#include "ardor.h"
+#include "burst.h"
 
 #define P1_INIT         0
 #define P1_MSG_BYTES    1
@@ -63,7 +63,6 @@ void cleanTokenCreationState() {
 void signTokenMessageHandlerHelper(const uint8_t p1, const uint8_t p2, const uint8_t * const dataBuffer, const uint8_t dataLength,
         uint8_t * const flags, uint8_t * const tx, const bool isLastCommandDifferent) {
 
-    UNUSED(p2);
     UNUSED(flags);
 
     if (isLastCommandDifferent)
@@ -113,22 +112,13 @@ void signTokenMessageHandlerHelper(const uint8_t p1, const uint8_t p2, const uin
                 break;
             }
 
-            //underflow was checked against above above
-            uint8_t derivationPathLengthInUints32 = (dataLength - 4) / sizeof(uint32_t);
-
-            if ((MIN_DERIVATION_LENGTH > derivationPathLengthInUints32) || (MAX_DERIVATION_LENGTH < derivationPathLengthInUints32)) {
-                cleanTokenCreationState();
-                G_io_apdu_buffer[(*tx)++] = R_WRONG_SIZE_ERR;
-                break;
-            }
-
             uint16_t exception = 0;
             uint32_t timestamp = 0;
-            uint8_t keySeed[32]; os_memset(keySeed, 0, sizeof(keySeed));
+            uint8_t sharedKey[32]; os_memset(sharedKey, 0, sizeof(sharedKey));
 
             //gotta do some space reuse
             uint8_t publicKeyAndFinalHash[32]; os_memset(publicKeyAndFinalHash, 0, sizeof(publicKeyAndFinalHash));
-            uint8_t ret = ardorKeys(dataBuffer + sizeof(timestamp), derivationPathLengthInUints32, keySeed, publicKeyAndFinalHash, 0, 0, &exception); //derivationParamLengthInBytes should devied by 4, it's checked above
+            uint8_t ret = burstKeys(p2, NULL, publicKeyAndFinalHash, sharedKey, &exception);
 
             if (R_SUCCESS != ret) {
                 cleanTokenCreationState();
@@ -161,8 +151,8 @@ void signTokenMessageHandlerHelper(const uint8_t p1, const uint8_t p2, const uin
 
             cx_hash(&state.tokenCreation.sha256.header, CX_LAST, 0, 0, publicKeyAndFinalHash, sizeof(publicKeyAndFinalHash));
 
-            signMsg(keySeed, publicKeyAndFinalHash, G_io_apdu_buffer + *tx); //is a void function, no ret value to check against
-            os_memset(keySeed, 0, sizeof(keySeed));
+            signMsg(sharedKey, publicKeyAndFinalHash, G_io_apdu_buffer + *tx); //is a void function, no ret value to check against
+            explicit_bzero(sharedKey, sizeof(sharedKey));
 
             *tx += 64;
 

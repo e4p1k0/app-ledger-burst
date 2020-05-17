@@ -27,7 +27,7 @@
 
 #include "returnValues.h"
 #include "config.h"
-#include "ardor.h"
+#include "burst.h"
 
 
 #define P1_INIT_ENCRYPT                     1
@@ -77,7 +77,6 @@ void aes_encrypt(void *ctx, const aes_uchar *plain, aes_uchar *crypt);
 void encryptDecryptMessageHandlerHelper(const uint8_t p1, const uint8_t p2, const uint8_t * const dataBuffer, const uint8_t dataLength,
         uint8_t * const flags, uint8_t * const tx, const bool isLastCommandDifferent) {
 
-    UNUSED(p2);
     UNUSED(flags);
 
     if (isLastCommandDifferent)
@@ -91,23 +90,8 @@ void encryptDecryptMessageHandlerHelper(const uint8_t p1, const uint8_t p2, cons
             return;
         }
 
-        int16_t derivationLengthSigned = 0;
-
-        if (P1_INIT_ENCRYPT == p1)
-            derivationLengthSigned = (dataLength - 32) / sizeof(uint32_t); //no underflow because type is signed
-        else
-            derivationLengthSigned = (dataLength - 32 * 2 - 16) / sizeof(uint32_t);
-
-        if ((MIN_DERIVATION_LENGTH > derivationLengthSigned) || (MAX_DERIVATION_LENGTH < derivationLengthSigned)) {
-            cleanEncryptionState();
-            G_io_apdu_buffer[(*tx)++] = R_WRONG_SIZE_ERR;
-            return;
-        }
-
-        uint8_t derivationLength = derivationLengthSigned; //cast is ok, because if the check above
-
         uint8_t nonce[32];
-        const uint8_t * noncePtr = dataBuffer + derivationLength * sizeof(uint32_t) + 32;
+        const uint8_t * noncePtr = dataBuffer + 32;
 
         if (P1_INIT_ENCRYPT == p1) {
             cx_rng(nonce, sizeof(nonce));
@@ -117,7 +101,7 @@ void encryptDecryptMessageHandlerHelper(const uint8_t p1, const uint8_t p2, cons
         uint16_t exceptionOut = 0;
         uint8_t encryptionKey[32];
 
-        uint8_t ret = getSharedEncryptionKey(dataBuffer, derivationLength, dataBuffer + derivationLength * sizeof(uint32_t), noncePtr, &exceptionOut, encryptionKey);
+        uint8_t ret = getSharedEncryptionKey(p2, dataBuffer, noncePtr, &exceptionOut, encryptionKey);
 
         if (R_KEY_DERIVATION_EX == ret) {
             cleanEncryptionState();

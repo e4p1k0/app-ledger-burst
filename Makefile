@@ -16,8 +16,8 @@
 #  limitations under the License.
 #*******************************************************************************
 
-#Defines
-DEVEL = 0#This means we are in DEBUG mode, change this up when releasing in production
+# DEVEL = 1 we are in DEBUG mode, change this up when releasing in production
+DEVEL = 1
 
 #####################################3
 
@@ -27,35 +27,17 @@ endif
 
 include $(BOLOS_SDK)/Makefile.defines
 
-ifndef COIN
-COIN=ardor
+APPNAME = Burstcoin
+DEFINES = "PATH_PREFIX={44|0x80000000,30|0x80000000}"
+PATH_PREFIX = "44'/30'"
+DEFINES += APP_PREFIX=\"BURST-\"
+    
+ifeq ($(TARGET_NAME),TARGET_NANOX)
+    ICONNAME = icons/nanox_app_burst.gif
+else
+    ICONNAME = icons/nanos_app_burst.gif
 endif
 
-ifeq ($(COIN),ardor)
-    APPNAME = Ardor
-    DEFINES = "PATH_PREFIX={44|0x80000000,16754|0x80000000}"
-    PATH_PREFIX = "44'/16754'"
-    DEFINES += APP_PREFIX=\"ARDOR-\"
-    
-    ifeq ($(TARGET_NAME),TARGET_NANOX)
-    	ICONNAME = ArdorIconNanoX.gif
-    else
-    	ICONNAME = ArdorIconNanoS.gif
-    endif
-else ifeq ($(COIN),nxt)
-    APPNAME = NXT
-    DEFINES = "PATH_PREFIX={44|0x80000000,29|0x80000000}"
-    PATH_PREFIX = "44'/29'"
-    DEFINES += APP_PREFIX=\"NXT-\"
-    
-    ifeq ($(TARGET_NAME),TARGET_NANOX)
-        ICONNAME = NXTIconNanoX.gif
-    else
-        ICONNAME = NXTIconNanoS.gif
-    endif
-else
-    $(error /!\ Coin "$(COIN)" not in list of allowed variants! Type "make listvariants" for variants list. Build non-default variant with "make COIN=<variant>")
-endif
 $(info Building $(APPNAME) app...)
 
 ############
@@ -95,7 +77,7 @@ endif
 
 DEFINES += HAVE_UX_FLOW
 
-APPVERSION_M = 1
+APPVERSION_M = 0
 APPVERSION_N = 0
 APPVERSION_P = 1
 
@@ -139,19 +121,11 @@ else
     DEFINES += PRINTF\(...\)=
 endif
 
-AUTOGEN_SRC := src/txnTypeLists.c
 AUTOGEN_OBJ := $(AUTOGEN_SRC:src/%.c=obj/%.o)
-
-SOURCE_FILES += $(AUTOGEN_SRC)
 
 .PHONY: realclean clean
 
 all: default
-
-$(AUTOGEN_OBJ): src/authAndSignTxn.c $(AUTOGEN_SRC)
-
-$(AUTOGEN_SRC): createTxnTypes.py txtypes.txt
-	python ./createTxnTypes.py > $@
 
 load: all
 	python -m ledgerblue.loadApp $(APP_LOAD_PARAMS)
@@ -199,5 +173,3 @@ include $(BOLOS_SDK)/Makefile.rules
 
 dep/%.d: %.c Makefile
 
-listvariants:
-	@echo VARIANTS COIN ardor nxt

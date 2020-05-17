@@ -3,6 +3,7 @@
 *  (c) 2016 Ledger
 *  (c) 2018 Nebulous
 *  (c) 2019 Haim Bender
+*  (c) 2020 jjos
 *
 *
 *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -91,7 +92,6 @@ handler_fn_t authAndSignTxnHandler;
 handler_fn_t encryptDecryptMessageHandler;
 handler_fn_t showAddressHandler;
 handler_fn_t getPublicKeyHandler;
-handler_fn_t signTokenMessageHandler;
 
 //function translate command ID to function PTR
 static handler_fn_t* lookupHandler(uint8_t ins) {
@@ -101,7 +101,6 @@ static handler_fn_t* lookupHandler(uint8_t ins) {
 	case INS_ENCRYPT_DECRYPT_MSG:				return encryptDecryptMessageHandler;
 	case INS_SHOW_ADDRESS:						return showAddressHandler;
 	case INS_GET_PUBLIC_KEY:				 	return getPublicKeyHandler;
-	case INS_SIGN_TOKEN:						return signTokenMessageHandler;
 	default:                 		return NULL;
 	}
 }

@@ -1,5 +1,5 @@
 /*******************************************************************************
-*  (c) 2019 Haim Bender
+*  (c) 2019 Haim Bender, 2020 jjos
 *
 *
 *  Licensed under the Apache License, Version 2.0 (the "License");

@@ -1,7 +1,6 @@
 
 
 //This file holds most of the CONSTANTS used in the APP
-//TXN_TYPES is configured in txnTypesList.c, it's there cuz the list is auto-generated from some other java file in order to sync between projects
 
 #include <stdint.h>
 #include <stdbool.h>

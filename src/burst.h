@@ -1,5 +1,5 @@
 /*******************************************************************************
-*  (c) 2019 Haim Bender
+*  (c) 2019 Haim Bender, 2020 jjos
 *
 *
 *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -77,17 +77,10 @@ typedef struct {
     unsigned int ctx[(4 * 4 * 15 + 4) / sizeof(unsigned int)];      //This is the encryption key, unsigned int is the type it uses aes_uint *
 } encyptionState_t;
 
-//State of the sign token handler
-typedef struct {
-    uint8_t mode;                           //Modes descrived in the .C file
-    cx_sha256_t sha256;                     //The state of the token hash
-} signTokenState_t;
-
 //This is the union states type, the actual object is defined in burst.c
 typedef union {
     encyptionState_t encryption;
     authTxn_t txnAuth;
-    signTokenState_t tokenCreation;
 } states_t;
 
 //declared in burst.c

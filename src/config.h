@@ -3,12 +3,6 @@
 
 //This is the header for different types of consts and configurations, the actual values are set in config.c
 
-typedef struct {
-    uint32_t chainId;
-    char * name;
-    uint8_t numDecimalsBeforePoint;
-} chainType;
-
 extern const uint8_t SUPPORTED_TXN_VERSION;
 
 extern const uint8_t BURST_SPECIAL_IDENTIFIER[];

@@ -28,19 +28,19 @@ DATA = ""
 ret = dongle.exchange(bytearray.fromhex(CLA + INS + P1 + P2 + LEN + DATA))
 print("version ", binascii.hexlify(ret))
 
-# INS = INS_GET_PUBLIC_KEY
-# LEN = "03"
-# DATA = ACCOUNT + CHANGE + INDEX
-# ret = dongle.exchange(bytearray.fromhex(CLA + INS + P1 + P2 + LEN + DATA))
-# print("ret ", str(ret[0]))
-# print("publicKey ", binascii.hexlify(ret[1:1+32]))
+INS = INS_GET_PUBLIC_KEY
+LEN = "03"
+DATA = ACCOUNT + CHANGE + INDEX
+ret = dongle.exchange(bytearray.fromhex(CLA + INS + P1 + P2 + LEN + DATA))
+print("ret ", str(ret[0]))
+print("publicKey ", binascii.hexlify(ret[1:1+32]))
 
-# # Show the address for the given index, blocks for user input (wait for an accept)
-# INS = INS_SHOW_ADDRESS
-# LEN = "03"
-# DATA = ACCOUNT + CHANGE + INDEX
-# ret = dongle.exchange(bytearray.fromhex(CLA + INS + P1 + P2 + LEN + DATA))
-# print("ret ", str(ret[0]))
+# Show the address for the given index, blocks for user input (wait for an accept)
+INS = INS_SHOW_ADDRESS
+LEN = "03"
+DATA = ACCOUNT + CHANGE + INDEX
+ret = dongle.exchange(bytearray.fromhex(CLA + INS + P1 + P2 + LEN + DATA))
+print("ret ", str(ret[0]))
 
 # An ordinary payment transaction
 INS = INS_AUTH_SIGN_TXN

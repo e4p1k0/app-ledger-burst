@@ -111,8 +111,7 @@ All return values for functions should be checked in every function.
 
 ## Key Derivation Algorithm
 
-All Burst wallets up to now derive the private based on a [SHA-256 of the passphrase]
-(https://github.com/burst-apps-team/burstkit4j/blob/c87793a4b76cc881f6596283a5bdbbc3ff1dde58/burstKit/src/main/java/burst/kit/crypto/BurstCryptoImpl.java#L125).
+All Burst wallets up to now derive the private based on a [SHA-256 of the passphrase](https://github.com/burst-apps-team/burstkit4j/blob/c87793a4b76cc881f6596283a5bdbbc3ff1dde58/burstKit/src/main/java/burst/kit/crypto/BurstCryptoImpl.java#L125).
 This is not how BIP32 wallets work, thus you will not be able to use your ledger *recovery phrase* directly on *legacy* Burst wallets, **only using another BIP32 device**.
 
 Burst is a registered [BIP-0044 coin](https://github.com/satoshilabs/slips/blob/master/slip-0044.md) with type equals `30` or `0x8000001e`.
@@ -127,8 +126,7 @@ the `index` for identifying different accounts (addresses).
 ## Signatures
 
 Burst signatures are not supported natively by Ledger.
-So the [Curve25519 Burst signature]
-(https://github.com/burst-apps-team/burstkit4j/blob/c87793a4b76cc881f6596283a5bdbbc3ff1dde58/burstKit/src/main/java/burst/kit/crypto/ec/Curve25519Impl.java#L35) was implemented on this Ledger App.
+So the [Curve25519 Burst signature](https://github.com/burst-apps-team/burstkit4j/blob/c87793a4b76cc881f6596283a5bdbbc3ff1dde58/burstKit/src/main/java/burst/kit/crypto/ec/Curve25519Impl.java#L35) was implemented on this Ledger App.
 
 
 ## License

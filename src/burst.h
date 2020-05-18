@@ -35,7 +35,7 @@ uint8_t getSharedEncryptionKey(const uint8_t * const dataBuffer, const uint8_t d
 //This is the state object that authAndSignTxn uses
 typedef struct {
 
-	bool txnPassedAutherization;                           //This most important bool, means the user confirmed the txn content via the dialog and we can sign the current TXN
+	bool txnAuthorized;                                    //This most important bool, means the user confirmed the txn content via the dialog and we can sign the current TXN
 
     uint8_t readBuffer[512];                               //This is where unparsed temp buffer data is kept, since we do streamed parsing we have to have it here
     uint16_t readBufferEndPos;                             //Index of the last byte in readBuffer
@@ -59,7 +59,7 @@ typedef struct {
 
 
     char feeText[21];               //9,223,372,036,854,775,807 is the biggest number you can hold in uint64 + the dot + null terminator means the longest text is 20
-    char txnTypeText[60];   //Aproximation of size
+    char txnTypeText[60];           //Aproximation of size
     char optionalWindow1Title[20];  //The longest string is price per (some chain name  here)
     char optionalWindow1Text[31];   //same as fee text + name of the chain + space
     char optionalWindow2Title[20];  //The longest string is price per (some chain name  here)

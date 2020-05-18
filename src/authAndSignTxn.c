@@ -82,7 +82,7 @@ void initTxnAuthState() {
     state.txnAuth.txnSizeBytes = 0;
     state.txnAuth.numBytesRead = 0;
 
-    state.txnAuth.txnPassedAutherization = false;
+    state.txnAuth.txnAuthorized = false;
     state.txnAuth.isClean = true;
     
     cx_sha256_init(&state.txnAuth.hashstate);
@@ -178,7 +178,7 @@ void reedSolomonEncode(const uint64_t inp, const char * output);
 unsigned int txn_authorized(const bagl_element_t *e) {
     UNUSED(e);
     
-    state.txnAuth.txnPassedAutherization = true;
+    state.txnAuth.txnAuthorized = true;
     G_io_apdu_buffer[0] = R_SUCCESS;
     G_io_apdu_buffer[1] = R_FINISHED;
     G_io_apdu_buffer[2] = 0x90;
@@ -606,7 +606,7 @@ void authAndSignTxnHandlerHelper(const uint8_t p1, const uint8_t p2, const uint8
             return;
         }
 
-        if (!state.txnAuth.txnPassedAutherization) {
+        if (!state.txnAuth.txnAuthorized) {
             initTxnAuthState();
             G_io_apdu_buffer[(*tx)++] = R_TXN_UNAUTHORIZED;
             return;
@@ -635,7 +635,7 @@ void authAndSignTxnHandlerHelper(const uint8_t p1, const uint8_t p2, const uint8
                 return;
             }
 
-            if (state.txnAuth.txnPassedAutherization) {
+            if (state.txnAuth.txnAuthorized) {
                 initTxnAuthState();
                 G_io_apdu_buffer[(*tx)++] = R_NOT_ALL_BYTES_USED;
                 return;

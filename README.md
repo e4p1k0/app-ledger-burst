@@ -11,7 +11,7 @@ Initially forked from [app-ledger-ardor](https://github.com/jelurida-dev/app-led
 
 ### Prepare the environment
 
-First, **update your ledger to the latest firmware**.
+First, **update your Ledger Dongle to the latest firmware (>= 1.6.0)**.
 
 After that, install prerequisite packages:
 
@@ -19,7 +19,7 @@ After that, install prerequisite packages:
 sudo apt install python3-venv python3-dev libudev-dev libusb-1.0-0-dev libtinfo.so.5
 ```
 
-Now use the `prepare-devenv.sh` script to prepare a local development environment with the right target (`s` or `x`).
+Now use the `prepare-devenv.sh` script to prepare a local development environment with either `s` or `x`.
 
 ```bash
 # (x or s, depending on your device)
@@ -66,23 +66,25 @@ implemented in the different .c files.
 
 Commands are in the format of
 
-    0xE0 <command id byte> <p1 byte> <p2 byte> <sizeof buffer> <buffer>
+    0x80 <command id byte> <p1 byte> <p2 byte> <sizeof buffer> <buffer>
 
 Response buffers are usually in the form of
 
     <return value byte> <buffer> <0x90> <0x00>
 
-returnValues.h lists all the return statuses
+`return_values.h` lists all possible return values
 
 ## Compilation
 
-To compile call
+To compile call (remember to prepare your environment):
+```
+make
+```
 
-	make
-
-To compile and upload to the ledger device
-
-	make load
+To compile and upload to the Ledger device:
+```
+make load
+```
 
 ### Stack Overflow Canary
 

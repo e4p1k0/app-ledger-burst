@@ -55,9 +55,6 @@ typedef struct {
    	int32_t attachmentTempInt32Num1, attachmentTempInt32Num2;    //Different attachments parse in different ways, they all need space in state, so this is how it's defined
    	int64_t attachmentTempInt64Num1, attachmentTempInt64Num2, attachmentTempInt64Num3; 
 
-   	uint16_t txnSizeBytes;                                 //The decalred Txn size
-
-
     char feeText[21];               //9,223,372,036,854,775,807 is the biggest number you can hold in uint64 + the dot + null terminator means the longest text is 20
     char txnTypeText[60];           //Aproximation of size
     char optionalWindow1Title[20];  //The longest string is price per (some chain name  here)

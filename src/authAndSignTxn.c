@@ -31,15 +31,10 @@
 #include "burst.h"
 
 
-#define P1_SIGN_INIT 1
-#define P1_SIGN_CONTINUE 2
-#define P1_SIGN_FINISH 3
-
-#define PARSE_MAIN_TXN 1
-#define PARSE_APPENDAGES 2
-#define PARSE_REFERENCED_TXN 3
-#define PARSE_ORDER_PLACEMENT 5
-#define PARSE_IGONORE 6
+#define P1_SIGN_INIT      0x01
+#define P1_SIGN_CONTINUE  0x02
+#define P1_SIGN_FINISH    0x03
+#define P1_SIGN_AUTHORIZE 0x10
 
 // This is the code that parses the txn for signing, it parses streamed txn bytes into the state object while hashing the bytes to be signed later,
 // displays a dialog of screens which contain the parsed txn bytes from the state, 
@@ -59,8 +54,8 @@
 //  API:
 //
 //
-//      The mode is encoded in the first 2 bits of the p1 parameter and the size of the txn should be ((p1 & 0b11111100) << 6) + p2
-//      you only need to pass the size when calling P1_SIGN_INIT
+//      The mode is encoded in the p1 parameter. The first call must be P1_SIGN_INIT and the last P1_SIGN_FINISH.
+//      The caller must also include P1_SIGN_AUTH flag in one call before P1_SIGN_FINISH (e.g. P1_SIGN_INIT|P1_SIGN_AUTH).
 //
 //      P1: P1_SIGN_INIT: initialize the signing command, with the txn to sign (at least the first 176 bytes)
 //      dataBuffer: txn bytes //you can send all of your bytes here if that is possible
@@ -109,16 +104,15 @@ void initTxnAuthState() {
 }
 
 
-//this function formats amounts into string and most importantly add the dot where it's supposed to be
-//the way this is works is that amounts ints and then the dot is added after chainNumDecimalsBeforePoint() digits from right to left
-//for example, if the amount is 4200000000 and we have 8 decimals, then the formated amount will be "42"
-//for 4210100000 it will be 42.101
-
-//@param outputString - does what it says
-//@param maxOutputLength - does what it says
-//@param numberToFormat - the input number to format, isn't const cuz we play with it in order to format the number
-//@param numDigitsBeforeDecimal - read first paragraph for info
-//@returns 0 iff some kind of error happend, else the length of the output string including the null terminator
+// This function formats amounts into string and most importantly add the dot where it's supposed to be.
+// The way this is works is that amounts ints and then the dot is added after numDigitsBeforeDecimal digits from right to left
+// for example, if the amount is 4200000000 and we have 8 decimals, then the formated amount will be "42"
+// for 4210100000 it will be 42.101
+// @param outputString - does what it says
+// @param maxOutputLength - does what it says
+// @param numberToFormat - the input number to format, isn't const cuz we play with it in order to format the number
+// @param numDigitsBeforeDecimal - read first paragraph for info
+// @returns 0 iff some kind of error happend, else the length of the output string including the null terminator
 uint8_t formatAmount(char * const outputString, const uint16_t maxOutputLength, uint64_t numberToFormat, const uint8_t numDigitsBeforeDecimal) {
     
     uint16_t outputIndex = 0;
@@ -362,6 +356,7 @@ uint8_t parseTxnData() {
     // Parse the byte array as construted by brs.Transaction.getBytes()
     uint8_t *ptr = NULL;
     uint8_t ret = R_SUCCESS;
+    uint8_t len;
     
     if(state.txnAuth.isClean) {
         // No tx type yet, get type and basic information
@@ -395,7 +390,7 @@ uint8_t parseTxnData() {
         ptr += 8;   //Skip the block Id
     }
 
-    // Read appendages and configure windows, see brs.Attachment.java
+    // Read appendages (if some) and configure windows, see brs.Attachment.java
     char *txTypeText = NULL;
     switch (state.txnAuth.txnTypeAndSubType) {
     case 0x1000:
@@ -500,7 +495,15 @@ uint8_t parseTxnData() {
         break;
     case 0x1016:
         txTypeText = "Create Contract";
-        state.txnAuth.ux_flow = ux_flow_minimal;
+        state.txnAuth.ux_flow = ux_flow_1optional;
+        // Read the contract name
+        ptr = readFromBuffer(32); // version, length, and name with up to 30 chars
+        if (ptr == 0)
+            return R_TXN_SIZE_TOO_SMALL;
+        ptr += 1; //version
+        read_u8(&len, &ptr);
+        snprintf(state.txnAuth.optionalWindow1Title, sizeof(state.txnAuth.optionalWindow1Title), "%s", "Contract name");
+        snprintf(state.txnAuth.optionalWindow1Text, MIN(len+1, sizeof(state.txnAuth.optionalWindow1Text)), "%s", ptr);
 
         // Contract data should always come on P1_SIGN_CONTINUE calls, closed by P1_SIGN_FINISHED
         ret = R_SEND_MORE_BYTES;
@@ -576,7 +579,7 @@ void authAndSignTxnHandlerHelper(const uint8_t p1, const uint8_t p2, const uint8
     uint8_t ret = R_SUCCESS;
 
     if (P1_SIGN_FINISH == p1) {
-        // Sign a transaction initiated before with P1_SIGN_INIT (and possibly P1_SIGN_CONTINUE)
+        // Sign a transaction initiated before with P1_SIGN_INIT (possibly extended with P1_SIGN_CONTINUE) and authorized with P1_SIGN_AUTHORIZE
         if (isLastCommandDifferent || state.txnAuth.isClean) {
             initTxnAuthState();
             G_io_apdu_buffer[(*tx)++] = R_ERR_NO_INIT_CANT_CONTINUE;
@@ -603,54 +606,56 @@ void authAndSignTxnHandlerHelper(const uint8_t p1, const uint8_t p2, const uint8
             G_io_apdu_buffer[(*tx)++] = ret;
         }
         return;
-    } else if ((P1_SIGN_INIT == p1) || (P1_SIGN_CONTINUE == p1)) {
+    }
 
-        if (P1_SIGN_INIT == p1) {
-            // P1_SIGN_INIT
+    if ((p1 & P1_SIGN_INIT) == P1_SIGN_INIT) {
+        // P1_SIGN_INIT
+        initTxnAuthState();
+
+        addToReadBuffer(dataBuffer, dataLength);
+        // parse the transaction data, and setup screens
+        ret = parseTxnData();
+    }
+    else if ((p1 & P1_SIGN_CONTINUE) == P1_SIGN_CONTINUE) {
+        if (isLastCommandDifferent || state.txnAuth.isClean) {
             initTxnAuthState();
-
-            addToReadBuffer(dataBuffer, dataLength);
-            // parse the transaction data, and setup screens
-            ret = parseTxnData();
-        }
-
-        if (P1_SIGN_CONTINUE == p1) {
-            if (isLastCommandDifferent || state.txnAuth.isClean) {
-                initTxnAuthState();
-                G_io_apdu_buffer[(*tx)++] = R_ERR_NO_INIT_CANT_CONTINUE;
-                return;
-            }
-
-            if (state.txnAuth.txnAuthorized) {
-                initTxnAuthState();
-                G_io_apdu_buffer[(*tx)++] = R_NOT_ALL_BYTES_USED;
-                return;
-            }
-
-            // Add to hash and wait for more bytes (or the finish command)
-            cx_hash(&state.txnAuth.hashstate.header, 0, dataBuffer, dataLength, 0, 0);
-            ret = R_SEND_MORE_BYTES;
-        }
-
-        if(ret == R_SUCCESS){
-            showScreen();
-            ret = R_SHOW_DISPLAY;
-        }
-
-        if (!((R_SEND_MORE_BYTES == ret) || (R_FINISHED == ret) || (R_SHOW_DISPLAY == ret))){
-            initTxnAuthState();
-            G_io_apdu_buffer[(*tx)++] = ret;
+            G_io_apdu_buffer[(*tx)++] = R_ERR_NO_INIT_CANT_CONTINUE;
             return;
         }
 
-        if (R_SHOW_DISPLAY == ret) {
-            *flags |= IO_ASYNCH_REPLY;
-        } else {
-            G_io_apdu_buffer[(*tx)++] = R_SUCCESS;
-            G_io_apdu_buffer[(*tx)++] = ret;
+        if (state.txnAuth.txnAuthorized) {
+            initTxnAuthState();
+            G_io_apdu_buffer[(*tx)++] = R_NOT_ALL_BYTES_USED;
+            return;
         }
-    } else {
+
+        // Add to hash and wait for more bytes (or the finish command)
+        cx_hash(&state.txnAuth.hashstate.header, 0, dataBuffer, dataLength, 0, 0);
+        ret = R_SEND_MORE_BYTES;
+    }
+    else {
         G_io_apdu_buffer[(*tx)++] = R_UNKNOWN_CMD_PARAM_ERR;
+        return;
+    }
+
+    if ((ret == R_SUCCESS || ret == R_SEND_MORE_BYTES) && (p1 & P1_SIGN_AUTHORIZE) == P1_SIGN_AUTHORIZE) {
+        // Will show windows to the user and ask for authorization
+        showScreen();
+        ret = R_SHOW_DISPLAY;
+    }
+
+    if (!((R_SEND_MORE_BYTES == ret) || (R_FINISHED == ret) || (R_SHOW_DISPLAY == ret))) {
+        initTxnAuthState();
+        G_io_apdu_buffer[(*tx)++] = ret;
+        return;
+    }
+
+    if (R_SHOW_DISPLAY == ret) {
+        *flags |= IO_ASYNCH_REPLY;
+    }
+    else {
+        G_io_apdu_buffer[(*tx)++] = R_SUCCESS;
+        G_io_apdu_buffer[(*tx)++] = ret;
     }
 }
 

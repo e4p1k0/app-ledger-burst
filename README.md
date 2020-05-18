@@ -1,7 +1,7 @@
 # Ledger App for Burst
 
 This is the official [Burst](https://burst-coin.org) ledger wallet app for the Ledger Nano S and X devices.
-Initially forked from app-ledger-ardor but transaction parsing and signing were rewritten.
+Initially forked from [app-ledger-ardor](https://github.com/jelurida-dev/app-ledger-ardor-main) but transaction parsing and signing were rewritten.
 
 ## Documentation
 
@@ -109,38 +109,34 @@ All return values for functions should be checked in every function.
 
 ## Key Derivation Algorithm
 
-Burst signatures are based on the EC-KCDSA over Curve25519 algorithm which is not supported natively by Ledger.
+All Burst wallets up to now derive the private based on a [SHA-256 of the passphrase]
+(https://github.com/burst-apps-team/burstkit4j/blob/c87793a4b76cc881f6596283a5bdbbc3ff1dde58/burstKit/src/main/java/burst/kit/crypto/BurstCryptoImpl.java#L125).
+This is not how BIP32 wallets work, thus you will not be able to use your ledger *recovery phrase* directly on *legacy* Burst wallets, **only using another BIP32 device**.
 
-To support standard BIP32 key derivation we implemented curve conversion for Burst using the protocol 
-[Yaffe-Bender HD key derivation for EC-KCDSA](https://www.jelurida.com/sites/default/files/kcdsa.pdf)
+Burst is a registered [BIP-0044 coin](https://github.com/satoshilabs/slips/blob/master/slip-0044.md) with type equals `30` or `0x8000001e`.
+So, a key derivation was implemented for Ledger devices using Curve25519 with the following path:
+```
+44'/30'/account'/change'/index'
+```
 
-Technically a public key is a Point (X,Y) on a curve C. X,Y are integers modulo some field F with a base point on the curve G.
-The tuple (C, F, G) defines a "curve", in this paper we are dealing with the twisted edwards curve (ed25519) and curve25519.
+Wallets can send different values for `account`, `change`, and `index`. A simple implementation could always send `account=0` and `change=0`, leaving
+the `index` for identifying different accounts (addresses).
 
-We are using a morph function between ed25519 and curve25519 so that if Apoint = Knumber * BasePointED25519 on ed25519 then 
-morph(Apoint) = Knumber * BasePointECKCDSA on curve25119
-Implementation for this function can be found in curveConversion.c
+## Signatures
 
-ed25519 public key is defined as `PublicKeyED25519Point = CLAMP(SHA512(privateKey)[:32]) * ED25519BasePoint`
+Burst signatures are not supported natively by Ledger.
+So the [Curve25519 Burst signature]
+(https://github.com/burst-apps-team/burstkit4j/blob/c87793a4b76cc881f6596283a5bdbbc3ff1dde58/burstKit/src/main/java/burst/kit/crypto/ec/Curve25519Impl.java#L35) was implemented on this Ledger App.
 
-Let's refer to CLAMP(SHA512(privateKey)[:32]) as KL
 
-The derivation composition flow for path P is:
+## License
 
-1. os_perso_derive_node_bip32 derives KLKR and chaincode for P using SLIP10 initialization on 512 bits master seed from bip39/bip32 24 words
-2. Derive PublicKeyED25519 using cx_eddsa_get_public_key and KL, the point is encoded as 65 bytes 0x04 XBigEndian YBigEndian
-3. PubleyKeyED25519YLE = convert(YBigEndian) - just reverse the bytes
-4. PublicKeyCurve25519X = morph(PubleyKeyEED25519YLE)
+This code is licensed under [Apache-2](LICENSE).
 
-Points on Curve25519 can be defined by the X coordinate (since each X coordinate has only one matching Y coordinate) 
-so PublicKeyCurve25519X and KL should hold PublicKeyCurve25519X = KL * Curve25519BasePoint
+## Author
 
-In EC-KCDSA publickey = privatekey^-1 * BasePoint, privateKey^-1 is referred to as the key seed, so KL is the key seed for the PublicKeyCurve25519X public key for path P.
+jjos
 
-Extra Notes:
+Donation address: BURST-JJQS-MMA4-GHB4-4ZNZU
 
-* ED25519 public keys are compressed into a Y point in little endian encoding having the MSB bit encode the parity of X (since each Y coordinate has two possible X values, X and -X in field F which means if one is even the second is odd)
-
-* In order to derive public keys outside of the ledger (Master key derivation), all we need is the ed25519 public key and chaincode, described in the derivation scheme.
-
-* Reference code for the derivation implementation can found in the [Ardor source code](https://bitbucket.org/Jelurida/ardor/src/master/)
+(Initially forked from [app-ledger-ardor](https://github.com/jelurida-dev/app-ledger-ardor-main).)

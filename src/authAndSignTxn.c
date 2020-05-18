@@ -46,9 +46,9 @@
 //
 // authAndSignTxnHandlerHelper is called with some of the txn bytes
 // => addToReadBuffer is called adds these bytes to the read buffer
-// => parseMainTxnData tries to pull 176 bytes from the buffer and after that the supported attachments
+// => parseTxnData tries to pull 176 bytes from the buffer and after that the supported attachments
 //      if there is are 176 bytes available:
-//          parseMainTxnData parses the main txn bytes and tries to read possible attachments
+//          parseTxnData parses the main txn bytes and tries to read possible attachments
 //      else
 //          R_SEND_MORE_BYTES returned back to the client
 //      
@@ -62,15 +62,15 @@
 //      The mode is encoded in the first 2 bits of the p1 parameter and the size of the txn should be ((p1 & 0b11111100) << 6) + p2
 //      you only need to pass the size when calling P1_SIGN_INIT
 //
-//      P1: P1_SIGN_INIT: initialize the signing command, with the txn to sign
-//      dataBuffer: txn bytes //you can send all of your bytes here if you want
+//      P1: P1_SIGN_INIT: initialize the signing command, with the txn to sign (at least the first 176 bytes)
+//      dataBuffer: txn bytes //you can send all of your bytes here if that is possible
 //      returns:    1 byte status
 //
 //      P1: P1_SIGN_CONTINUE:    more txn bytes
 //      returns:    1 byte status
 //
-//      P1: P1_SIGN_FINISH: closes the signing command (no data should be sent)
-//      P2: account index
+//      P1: P1_SIGN_FINISH: closes the signing command (no more data, only the path derivation)
+//      dataBuffer: path derivation
 //      returns:    1 bytes status | 64 byte signiture
 
 
@@ -314,7 +314,7 @@ static void showScreen() {
     ux_flow_init(0, state.txnAuth.ux_flow, NULL);
 }
 
-//Takes bytes away from the buffer, returns 0 if there aren't enough bytes
+// Takes bytes away from the buffer, returns 0 if there aren't enough bytes
 uint8_t * readFromBuffer(const uint8_t size) {
 
     if (state.txnAuth.readBufferEndPos - state.txnAuth.readBufferReadOffset < size)
@@ -340,45 +340,65 @@ void addRecipientText() {
     reedSolomonEncode(state.txnAuth.recipientId, state.txnAuth.optionalWindow2Text + strlen(state.txnAuth.optionalWindow2Text));
 }
 
+// Reads a uint8_t from buffer
+void read_u8(uint8_t *val, uint8_t **ptr){
+    os_memmove(val, *ptr, sizeof(uint8_t));
+    *ptr += sizeof(uint8_t);
+}
+
+// Reads a uint16_t from buffer
+void read_u16(uint16_t *val, uint8_t **ptr){
+    os_memmove(val, *ptr, sizeof(uint16_t));
+    *ptr += sizeof(uint16_t);
+}
+
+// Reads a uint64_t from buffer and put the resulting value on val
+void read_u64(uint64_t *val, uint8_t **ptr){
+    os_memmove(val, *ptr, sizeof(uint64_t));
+    *ptr += sizeof(uint64_t);
+}
+
 // This is the parse function, it parses the entire txn body and configure ux_flow variables
-uint8_t parseMainTxnData() {
+uint8_t parseTxnData() {
     // Parse the byte array as construted by brs.Transaction.getBytes()
-    uint8_t pos;
-    uint8_t *ptr = readFromBuffer(176); // minimal transaction length
-    if (0 == ptr)
-        return R_SEND_MORE_BYTES;
+    uint8_t len;
+    uint8_t *ptr = NULL;
+    
+    if(state.txnAuth.isClean) {
+        // No tx type yet, get type and basic information
+        state.txnAuth.isClean = false;
 
-    os_memmove(&(state.txnAuth.txnTypeAndSubType), ptr, sizeof(state.txnAuth.txnTypeAndSubType));
-    ptr += sizeof(state.txnAuth.txnTypeAndSubType);
+        ptr = readFromBuffer(176); // minimal transaction length, first call should have at least this
+        if (0 == ptr)
+            return R_TXN_SIZE_TOO_SMALL;
 
-    ptr += 4;   // Skip the timestamp
-    ptr += 2;   // Skip the deadline
-    ptr += 32;  // Skip the sender publickey
+        read_u16(&(state.txnAuth.txnTypeAndSubType), &ptr);
 
-    os_memmove(&(state.txnAuth.recipientId), ptr, sizeof(state.txnAuth.recipientId));
-    ptr += sizeof(state.txnAuth.recipientId);
+        ptr += 4;   // Skip the timestamp
+        ptr += 2;   // Skip the deadline
+        ptr += 32;  // Skip the sender publickey
 
-    os_memmove(&(state.txnAuth.amount), ptr, sizeof(state.txnAuth.amount));
-    ptr += sizeof(state.txnAuth.amount);
+        read_u64(&(state.txnAuth.recipientId), &ptr);
+        read_u64(&(state.txnAuth.amount), &ptr);
 
-    uint64_t fee = 0;
-    os_memmove(&fee, ptr, sizeof(fee));
-    ptr += sizeof(fee);
+        uint64_t fee = 0;
+        read_u64(&fee, &ptr);
 
-    uint8_t ret = formatAmount(state.txnAuth.feeText, sizeof(state.txnAuth.feeText), fee, 8);
-    if (0 == ret)
-        return R_FORMAT_FEE_ERR;
+        uint8_t ret = formatAmount(state.txnAuth.feeText, sizeof(state.txnAuth.feeText), fee, 8);
+        if (0 == ret)
+            return R_FORMAT_FEE_ERR;
 
-    ptr += 32;  //Skip the referencedTransactionFullHash TODO: check
-    ptr += 64;  //Skip the sig
+        ptr += 32;  //Skip the referencedTransactionFullHash TODO: check
+        ptr += 64;  //Skip the sig
 
-    ptr += 4;   //Skip the flags
-    ptr += 4;   //Skip the block height
-    ptr += 8;   //Skip the block Id
+        ptr += 4;   //Skip the flags
+        ptr += 4;   //Skip the block height
+        ptr += 8;   //Skip the block Id
+    }
 
     state.txnAuth.ux_flow = ux_flow_minimal; // minimal ux_flow
 
-    // Configure windows and read appendages, see brs.Attachment.java
+    // Read appendages and configure windows, see brs.Attachment.java
     char *txTypeText = NULL;
     switch (state.txnAuth.txnTypeAndSubType) {
     case 0x1000:
@@ -387,8 +407,7 @@ uint8_t parseMainTxnData() {
 
         // Window 1 is amount
         snprintf(state.txnAuth.optionalWindow1Title, sizeof(state.txnAuth.optionalWindow1Title), "%s", "BURST Amount");
-        pos = formatAmount(state.txnAuth.optionalWindow1Text, sizeof(state.txnAuth.optionalWindow1Text), state.txnAuth.amount, 8);
-        if (0 == pos)
+        if(0 == formatAmount(state.txnAuth.optionalWindow1Text, sizeof(state.txnAuth.optionalWindow1Text), state.txnAuth.amount, 8))
             return R_FORMAT_AMOUNT_ERR;
         // Window 2 is the recipient
         addRecipientText();
@@ -411,8 +430,7 @@ uint8_t parseMainTxnData() {
             // TRT token
             txTypeText = "TRT Transfer";
             snprintf(state.txnAuth.optionalWindow1Title, sizeof(state.txnAuth.optionalWindow1Title), "%s", "TRT Amount");
-            pos = formatAmount(state.txnAuth.optionalWindow1Text, sizeof(state.txnAuth.optionalWindow1Text), state.txnAuth.attachmentTempInt64Num2, 4);
-            if (0 == pos)
+            if( 0 == formatAmount(state.txnAuth.optionalWindow1Text, sizeof(state.txnAuth.optionalWindow1Text), state.txnAuth.attachmentTempInt64Num2, 4))
                 return R_FORMAT_AMOUNT_ERR;
         }
         else {
@@ -446,13 +464,11 @@ uint8_t parseMainTxnData() {
             state.txnAuth.ux_flow = ux_flow_optionals;
 
             snprintf(state.txnAuth.optionalWindow1Title, sizeof(state.txnAuth.optionalWindow1Title), "%s", "TRT Amount");
-            pos = formatAmount(state.txnAuth.optionalWindow1Text, sizeof(state.txnAuth.optionalWindow1Text), state.txnAuth.attachmentTempInt64Num2, 4);
-            if (0 == pos)
+            if( 0 == formatAmount(state.txnAuth.optionalWindow1Text, sizeof(state.txnAuth.optionalWindow1Text), state.txnAuth.attachmentTempInt64Num2, 4))
                 return R_FORMAT_AMOUNT_ERR;
             
             snprintf(state.txnAuth.optionalWindow2Title, sizeof(state.txnAuth.optionalWindow2Title), "%s", "Price in BURST");
-            pos = formatAmount(state.txnAuth.optionalWindow2Text, sizeof(state.txnAuth.optionalWindow2Text), state.txnAuth.attachmentTempInt64Num3, 4);
-            if (0 == pos)
+            if( 0 == formatAmount(state.txnAuth.optionalWindow2Text, sizeof(state.txnAuth.optionalWindow2Text), state.txnAuth.attachmentTempInt64Num3, 4))
                 return R_FORMAT_AMOUNT_ERR;
             
         }
@@ -481,13 +497,23 @@ uint8_t parseMainTxnData() {
 
         // Window 1 is order ID
         snprintf(state.txnAuth.optionalWindow1Title, sizeof(state.txnAuth.optionalWindow1Title), "%s", "Order ID");
-        pos = formatAmount(state.txnAuth.optionalWindow1Text, sizeof(state.txnAuth.optionalWindow1Text), state.txnAuth.attachmentTempInt64Num1, 0);
-        if (0 == pos)
+        if(0 == formatAmount(state.txnAuth.optionalWindow1Text, sizeof(state.txnAuth.optionalWindow1Text), state.txnAuth.attachmentTempInt64Num1, 0))
             return R_FORMAT_AMOUNT_ERR;
 
         break;
     case 0x1016:
         txTypeText = "Create Contract";
+
+        // name length
+        read_u8(&len, &ptr);
+
+        //this.name = Convert.readString( buffer , buffer.get() , Constants.MAX_AUTOMATED_TRANSACTION_NAME_LENGTH );
+        //this.description = Convert.readString( buffer , buffer.getShort() , Constants.MAX_AUTOMATED_TRANSACTION_DESCRIPTION_LENGTH );
+
+
+        ptr = readFromBuffer(1 + 8); // version plus 1 long
+        if (ptr == 0)
+            return R_SEND_MORE_BYTES;
 
         break;
     default:
@@ -508,10 +534,10 @@ uint8_t parseReferencedTxn() {
     return R_SUCCESS;
 }
 
-//Addes bytes to the read buffer
-//@param newData: ptr to the data
-//@param numBytes: number of bytes in the data
-//return R_SUCCESS on success, R_NO_SPACE_BUFFER_TOO_SMALL othereize
+// Adds bytes to the read buffer and to cx_hash
+// @param newData: ptr to the data
+// @param numBytes: number of bytes in the data
+// return R_SUCCESS on success, R_NO_SPACE_BUFFER_TOO_SMALL othereize
 uint8_t addToReadBuffer(const uint8_t * const newData, const uint8_t numBytes) {
 
     for (uint8_t i = 0; i < state.txnAuth.readBufferEndPos - state.txnAuth.readBufferReadOffset; i++)
@@ -539,12 +565,12 @@ uint8_t addToReadBuffer(const uint8_t * const newData, const uint8_t numBytes) {
 //@param outException out -              ptr to where to write the exception if it happends
 //@returns R_SUCCESS if success else the appropriate error code is returned
 
-uint8_t signTxn(uint8_t index, uint8_t * const destBuffer, uint16_t * const outException) {
+uint8_t signTxn(const uint8_t * const dataBuffer, const uint8_t dataLength, uint8_t * const destBuffer, uint16_t * const outException) {
 
     uint8_t sharedKey[32]; os_memset(sharedKey, 0, sizeof(sharedKey));
     uint8_t ret = 0;
 
-    if (R_SUCCESS != (ret = burstKeys(index, NULL, NULL, sharedKey, outException))) {
+    if (R_SUCCESS != (ret = burstKeys(dataBuffer, dataLength, NULL, NULL, sharedKey, outException))) {
         explicit_bzero(sharedKey, sizeof(sharedKey));
         return ret;
     }
@@ -571,7 +597,7 @@ uint8_t signTxn(uint8_t index, uint8_t * const destBuffer, uint16_t * const outE
 void authAndSignTxnHandlerHelper(const uint8_t p1, const uint8_t p2, const uint8_t * const dataBuffer, const uint8_t dataLength,
         uint8_t * const flags, uint8_t * const tx, const bool isLastCommandDifferent) {
 
-    if (P1_SIGN_FINISH == (p1 & 0x03)) {
+    if (P1_SIGN_FINISH == p1) {
         // Sign a transaction initiated before with P1_SIGN_INIT (and possibly P1_SIGN_CONTINUE)
 
         if (isLastCommandDifferent || state.txnAuth.isClean) {
@@ -588,7 +614,7 @@ void authAndSignTxnHandlerHelper(const uint8_t p1, const uint8_t p2, const uint8
 
         uint16_t exception = 0;
 
-        uint8_t ret = signTxn(p2, G_io_apdu_buffer + 1, &exception);
+        uint8_t ret = signTxn(dataBuffer, dataLength, G_io_apdu_buffer + 1, &exception);
 
         // clear the state for a future call
         initTxnAuthState();
@@ -599,9 +625,10 @@ void authAndSignTxnHandlerHelper(const uint8_t p1, const uint8_t p2, const uint8
         } else {
             G_io_apdu_buffer[(*tx)++] = ret;
         }
-    } else if ((P1_SIGN_INIT == (p1 & 0x03)) || (P1_SIGN_CONTINUE == (p1 & 0x03))) {
+        return;
+    } else if ((P1_SIGN_INIT == p1) || (P1_SIGN_CONTINUE == p1)) {
 
-        if (P1_SIGN_CONTINUE == (p1 & 0x03)) {
+        if (P1_SIGN_CONTINUE == p1) {
             if (isLastCommandDifferent || state.txnAuth.isClean) {
                 initTxnAuthState();
                 G_io_apdu_buffer[(*tx)++] = R_ERR_NO_INIT_CANT_CONTINUE;
@@ -618,7 +645,7 @@ void authAndSignTxnHandlerHelper(const uint8_t p1, const uint8_t p2, const uint8
             // P1_SIGN_INIT
             initTxnAuthState();
 
-            state.txnAuth.txnSizeBytes = ((p1 & 0b11111100) << 6) + p2;
+            state.txnAuth.txnSizeBytes = dataLength;
 
             if (state.txnAuth.txnSizeBytes < 176) {
                 G_io_apdu_buffer[(*tx)++] = R_TXN_SIZE_TOO_SMALL;
@@ -626,13 +653,11 @@ void authAndSignTxnHandlerHelper(const uint8_t p1, const uint8_t p2, const uint8
             }
         }
 
-        state.txnAuth.isClean = false;
-
         uint8_t ret = addToReadBuffer(dataBuffer, dataLength);
 
         // parse the transaction data, and setup screens
         if(ret == R_SUCCESS)
-            ret = parseMainTxnData();
+            ret = parseTxnData();
         if(ret == R_SUCCESS){
             showScreen();
             ret = R_SHOW_DISPLAY;

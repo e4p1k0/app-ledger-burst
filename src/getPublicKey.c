@@ -33,12 +33,8 @@
     API:
 
         P1: P1_GET_PUBLIC_KEY:
-        dataBuffer: derivation path (uint32) * some length
-        returns:    32 byte EC-KCDSA public key
-
-        P1: P1_GET_PUBLIC_KEY_CHAIN_CODE_AND_ED_PUBLIC_KEY:
-        dataBuffer: derivaiton path (uint32) * some length
-        returns:    32 byte EC-KCDSA public key | 32 byte chain code | 32 byte ED25516 public key
+        dataBuffer: derivation path (uint32) * 5
+        returns:    32 byte public key
 
 */
 
@@ -51,8 +47,8 @@ void getPublicKeyHandlerHelper(const uint8_t p1, const uint8_t p2, const uint8_t
     uint8_t publicKey[32];
     uint16_t exception = 0;
 
-    uint8_t ret = burstKeys(p2, 0, publicKey, 0, &exception);
-    // uint8_t ret = burstKeys(p2, publicKey, 0, 0, &exception); // DO NOT COMMIT THIS LINE!!!, used for testing only, to send the privatekey to the client, private key should never be released
+    uint8_t ret = burstKeys(dataBuffer, dataLength, 0, publicKey, 0, &exception);
+    // uint8_t ret = burstKeys(dataBuffer, dataLength, publicKey, 0, 0, &exception); // DO NOT COMMIT THIS LINE!!!, used for testing only, to send the privatekey to the client, private key should never be released
 
     G_io_apdu_buffer[(*tx)++] = ret;
 

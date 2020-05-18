@@ -101,7 +101,7 @@ void encryptDecryptMessageHandlerHelper(const uint8_t p1, const uint8_t p2, cons
         uint16_t exceptionOut = 0;
         uint8_t encryptionKey[32];
 
-        uint8_t ret = getSharedEncryptionKey(p2, dataBuffer, noncePtr, &exceptionOut, encryptionKey);
+        uint8_t ret = getSharedEncryptionKey(dataBuffer, dataLength, dataBuffer, noncePtr, &exceptionOut, encryptionKey);
 
         if (R_KEY_DERIVATION_EX == ret) {
             cleanEncryptionState();

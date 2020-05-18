@@ -76,13 +76,13 @@ void reedSolomonEncode(const uint64_t inp, char * const output);
 void showAddressHandlerHelper(const uint8_t p1, const uint8_t p2, const uint8_t * const dataBuffer, const uint8_t dataLength,
         uint8_t * const flags, uint8_t * const tx) {
 
-    UNUSED(p1);
+    UNUSED(p1); UNUSED(p2);
 
     uint16_t exception = 0;
 
     uint8_t publicKey[32]; os_memset(publicKey, 0, sizeof(publicKey));
 
-    uint8_t ret = burstKeys(p2, 0, publicKey, 0, &exception);
+    uint8_t ret = burstKeys(dataBuffer, dataLength, 0, publicKey, 0, &exception);
 
     if (R_SUCCESS == ret) {
         os_memset(screenContent, 0, sizeof(screenContent));

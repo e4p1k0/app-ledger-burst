@@ -95,28 +95,30 @@ void morph25519_e2m(uint8_t *montgomery, const uint8_t *y);
 
 //this function derives an burst private key, public key, public key and shared key (for signing)
 //For more info on how this derivation works, please read the readme
-//@param in: derivationPath - a BIP42 derivation path, must be at least of length MIN_DERIVATION_PATH_LENGTH
-//@param optional out: keySeedBfrOut - 32 byte EC-KCDSA keyseed for the derivation path
-//@param optional out: publicKeyOut - 32 byte EC-KCDSA public key for the derivation path
-//@param optional out: sharedKeyOut
-//@param out: exceptionOut - iff the return code is R_EXCEPTION => exceptionOut will be filled with the Nano exception code
+//@param in: dataBuffer - a BIP32 derivation path, must be of length 3, recomended account'/change'/index'
+//@param in: dataLength - derivation path length, must be >= 3
+//@param optional out: privKeyOut - 32 byte private key for the derivation path using Ed25519
+//@param optional out: publicKeyOut - 32 byte public key for the private key
+//@param optional out: sharedKeyOut - 32 byte shared key for signing
+//@param out: exceptionOut - if the return code is R_EXCEPTION => exceptionOut will be filled with the Nano exception code
 //@returns: regular return values
-uint8_t burstKeys(const uint8_t index, uint8_t * const privKeyOut, uint8_t * const publicKeyOut,
+uint8_t burstKeys(const uint8_t * const dataBuffer, const uint8_t dataLength, uint8_t * const privKeyOut, uint8_t * const publicKeyOut,
     uint8_t * const sharedKeyOut, uint16_t * const exceptionOut) {
     
     uint32_t pathPrefix[] = PATH_PREFIX; //defined in Makefile
-    uint8_t account = 0;
-    uint8_t change = 0;
 
     uint8_t publicKey[32]; os_memset(publicKey, 0, sizeof(publicKey));
     uint8_t privKey[32]; os_memset(privKey, 0, sizeof(privKey));
 
-    // BURST keypath of 44'/30'/0'/0'/index'
+    if(dataLength < 3)
+        return R_NOT_ENOUGH_DERIVATION_INDEXES;
+
+    // BURST keypath of 44'/30'/account'/change'/index'
     uint32_t derivationPath[5]; os_memset(derivationPath, 0, sizeof(derivationPath));
     os_memmove(derivationPath, pathPrefix, 2 * sizeof(uint32_t));
-    derivationPath[2] = account | 0x80000000;
-    derivationPath[3] = change | 0x80000000;
-    derivationPath[4] = index | 0x80000000;
+    derivationPath[2] = dataBuffer[0] | 0x80000000; // account
+    derivationPath[3] = dataBuffer[1] | 0x80000000; // change
+    derivationPath[4] = dataBuffer[2] | 0x80000000; // index
 
     BEGIN_TRY {
             TRY {
@@ -151,18 +153,16 @@ uint8_t burstKeys(const uint8_t index, uint8_t * const privKeyOut, uint8_t * con
 //@param derivationPath - the derivation path
 //@param derivationPathLengthInUints32 - kinda clear what this is
 //@param targetPublicKey - the 32 byte public key
-uint8_t getSharedEncryptionKey(const uint8_t index, const uint8_t* const targetPublicKey, 
+uint8_t getSharedEncryptionKey(const uint8_t * const dataBuffer, const uint8_t dataLength, const uint8_t* const targetPublicKey, 
                                 const uint8_t * const nonce, uint16_t * const exceptionOut, uint8_t * const aesKeyOut) {
     
     uint8_t keySeed[32]; os_memset(keySeed, 0, sizeof(keySeed));
 
-    uint8_t ret = burstKeys(index, keySeed, 0, 0, exceptionOut);
-
+    uint8_t ret = burstKeys(dataBuffer, dataLength, keySeed, 0, 0, exceptionOut);
     if (R_SUCCESS != ret)
         return ret;
 
     uint8_t sharedKey[32]; os_memset(sharedKey, 0, sizeof(sharedKey));
-
 
     curve25519(sharedKey, keySeed, targetPublicKey); //should use only the first 32 bytes of keyseed
     

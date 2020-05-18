@@ -20,7 +20,7 @@
 #endif
 
 uint64_t publicKeyToId(const uint8_t * const publicKey);
-uint8_t burstKeys(const uint8_t index, uint8_t * const privKeyOut, uint8_t * const publicKeyOut,
+uint8_t burstKeys(const uint8_t * const dataBuffer, const uint8_t dataLength, uint8_t * const privKeyOut, uint8_t * const publicKeyOut,
     uint8_t * const sharedKeyOut, uint16_t * const exceptionOut);
 
 void signMsg(uint8_t * const sharedKey, const uint8_t * const msgSha256, uint8_t * const sig);
@@ -28,7 +28,7 @@ void signMsg(uint8_t * const sharedKey, const uint8_t * const msgSha256, uint8_t
 void ui_idle();
 bool check_canary();
 
-uint8_t getSharedEncryptionKey(const uint8_t index, const uint8_t* const targetPublicKey, 
+uint8_t getSharedEncryptionKey(const uint8_t * const dataBuffer, const uint8_t dataLength, const uint8_t* const targetPublicKey, 
                                 const uint8_t * const nonce, uint16_t * const exceptionOut, uint8_t * const aesKeyOut);
 
 
@@ -85,14 +85,6 @@ typedef union {
 
 //declared in burst.c
 extern states_t state;
-
-//used to list txn types
-typedef struct {
-    uint16_t id;
-    char * name;
-    uint8_t attachmentParsingFunctionNumber;
-} txnType;
-
 
 // These are the offsets of various parts of a request APDU packet. INS
 // identifies the requested command (see above), and P1 and P2 are parameters

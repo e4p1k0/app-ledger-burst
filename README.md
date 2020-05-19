@@ -1,5 +1,6 @@
 # Ledger App for Burst
 
+(Still under development)
 This is the official [Burst](https://burst-coin.org) ledger wallet app for the Ledger Nano S and X devices.
 Initially forked from [app-ledger-ardor](https://github.com/jelurida-dev/app-ledger-ardor-main) but transaction parsing and signing were rewritten.
 

@@ -242,14 +242,14 @@ UX_STEP_VALID(aasFlowAccept,
     txn_authorized(NULL),
     {
       &C_icon_validate_14,
-      "Accept",
+      "Authorize",
     });
 UX_STEP_VALID(aasFlowReject, 
     pb, 
     txn_canceled(NULL),
     {
       &C_icon_crossmark,
-      "Reject",
+      "Deny",
     });
 
 UX_FLOW(ux_flow_minimal,

@@ -34,9 +34,10 @@ bolos_ux_params_t G_ux_params;
 
 UX_STEP_NOCB(
     ux_idle_flow_1_step, 
-    nn, 
+    pnn, 
     {
-      "Application",
+	  &C_icon_burst,
+      "Burstcoin app",
       "is ready",
     });
 UX_STEP_NOCB(

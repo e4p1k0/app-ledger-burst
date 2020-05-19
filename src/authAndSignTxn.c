@@ -101,6 +101,8 @@ void initTxnAuthState() {
     explicit_bzero(state.txnAuth.optionalWindow2Title, sizeof(state.txnAuth.optionalWindow2Title));
     explicit_bzero(state.txnAuth.optionalWindow2Text, sizeof(state.txnAuth.optionalWindow2Text));
     explicit_bzero(state.txnAuth.appendagesText, sizeof(state.txnAuth.appendagesText));
+
+    ui_idle();
 }
 
 
@@ -178,7 +180,7 @@ unsigned int txn_authorized(const bagl_element_t *e) {
     G_io_apdu_buffer[3] = 0x00;
     io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, 4);
     
-    ui_idle();  // redraw ui
+    ui_signing();  // redraw ui
     return 0; // DO NOT REDRAW THE BUTTON
 }
 

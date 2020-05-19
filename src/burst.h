@@ -26,6 +26,7 @@ uint8_t burstKeys(const uint8_t * const dataBuffer, const uint8_t dataLength, ui
 void signMsg(uint8_t * const sharedKey, const uint8_t * const msgSha256, uint8_t * const sig);
 
 void ui_idle();
+void ui_signing();
 bool check_canary();
 
 uint8_t getSharedEncryptionKey(const uint8_t * const dataBuffer, const uint8_t dataLength, const uint8_t* const targetPublicKey, 

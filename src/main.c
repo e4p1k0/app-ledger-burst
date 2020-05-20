@@ -69,7 +69,7 @@ UX_STEP_NOCB(
     {
 	  &C_icon_key,
       "Signing the",
-      "transation",
+      "transaction",
     });
 const ux_flow_step_t * const ux_signing_flow [] = {
   &ux_signing_flow_1_step,

@@ -67,7 +67,7 @@ UX_STEP_NOCB(
     pnn, 
     {
 	  &C_icon_coggle,
-      "Signing",
+      "Signing the",
       "transation",
     });
 const ux_flow_step_t * const ux_signing_flow [] = {
@@ -100,10 +100,9 @@ void ui_signing() {
 // table of function pointers.
 #define INS_GET_VERSION    					0x01
 #define INS_AUTH_SIGN_TXN  					0x03
-#define INS_ENCRYPT_DECRYPT_MSG				0x04
+// #define INS_ENCRYPT_DECRYPT_MSG				0x04
 #define INS_SHOW_ADDRESS 					0x05
 #define INS_GET_PUBLIC_KEY					0x06
-#define INS_SIGN_TOKEN						0x07
 
 // This is the function signature for a command handler. 'flags' and 'tx' are
 // out-parameters that will control the behavior of the next io_exchange call
@@ -120,7 +119,7 @@ static handler_fn_t* lookupHandler(uint8_t ins) {
 	switch (ins) {
 	case INS_GET_VERSION:    					return getVersionHandler;
 	case INS_AUTH_SIGN_TXN:   					return authAndSignTxnHandler;
-	case INS_ENCRYPT_DECRYPT_MSG:				return encryptDecryptMessageHandler;
+	// case INS_ENCRYPT_DECRYPT_MSG:				return encryptDecryptMessageHandler;
 	case INS_SHOW_ADDRESS:						return showAddressHandler;
 	case INS_GET_PUBLIC_KEY:				 	return getPublicKeyHandler;
 	default:                 		return NULL;

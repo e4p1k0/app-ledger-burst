@@ -2,7 +2,10 @@
 
 (Still under development)
 This is the official [Burst](https://burst-coin.org) ledger wallet app for the Ledger Nano S and X devices.
-Initially forked from [app-ledger-ardor](https://github.com/jelurida-dev/app-ledger-ardor-main) but transaction parsing and signing were rewritten.
+Initially forked from [app-ledger-ardor](https://github.com/jelurida-dev/app-ledger-ardor-main) but mostly rewritten.
+
+This application supports multiple accounts using BIP32 derivation paths.
+No information is stored on the device flash memory.
 
 ## Documentation
 
@@ -78,12 +81,12 @@ Response buffers are usually in the form of
 ## Compilation
 
 To compile call (remember to prepare your environment):
-```
+```bash
 make
 ```
 
 To compile and upload to the Ledger device:
-```
+```bash
 make load
 ```
 
@@ -91,7 +94,9 @@ make load
 
 To get the amount of memory used in the app call the following command
 
-    readelf -s bin/app.elf | grep app_stack_canary 
+```bash
+readelf -s bin/app.elf | grep app_stack_canary 
+```
 
 This will output the canary (which is at the end of the memory space) location then subtract `0x20001800` (Nano S) or
 `0xda7a0000` (Nano X) to get the actual used up space for the app. 
@@ -112,10 +117,10 @@ All return values for functions should be checked in every function.
 
 ## Key Derivation Algorithm
 
-All Burst wallets up to now derive the private based on a [SHA-256 of the passphrase](https://github.com/burst-apps-team/burstkit4j/blob/c87793a4b76cc881f6596283a5bdbbc3ff1dde58/burstKit/src/main/java/burst/kit/crypto/BurstCryptoImpl.java#L125).
+All Burst wallets up to now derive the private key based on a [SHA-256 of the passphrase](https://github.com/burst-apps-team/burstkit4j/blob/c87793a4b76cc881f6596283a5bdbbc3ff1dde58/burstKit/src/main/java/burst/kit/crypto/BurstCryptoImpl.java#L125).
 This is not how BIP32 wallets work, thus you will not be able to use your ledger *recovery phrase* directly on *legacy* Burst wallets, **only using another BIP32 device**.
 
-Burst is a registered [BIP-0044 coin](https://github.com/satoshilabs/slips/blob/master/slip-0044.md) with type equals `30` or `0x8000001e`.
+Burst is a registered [BIP-0044 coin](https://github.com/satoshilabs/slips/blob/master/slip-0044.md) with type equals `30` (or `0x8000001e`).
 So, a key derivation was implemented for Ledger devices using Curve25519 with the following path:
 ```
 44'/30'/account'/change'/index'

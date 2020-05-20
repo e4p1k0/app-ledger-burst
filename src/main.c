@@ -67,7 +67,7 @@ UX_STEP_NOCB(
     ux_signing_flow_1_step, 
     pnn, 
     {
-	  &C_icon_coggle,
+	  &C_icon_key,
       "Signing the",
       "transation",
     });

@@ -17,7 +17,7 @@
 #*******************************************************************************
 
 # DEVEL = 1 we are in DEBUG mode, change this up when releasing in production
-DEVEL = 1
+DEVEL = 0
 
 #####################################3
 

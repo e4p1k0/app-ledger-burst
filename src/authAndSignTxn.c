@@ -551,7 +551,7 @@ uint8_t signTxn(const uint8_t * const dataBuffer, const uint8_t dataLength, uint
     uint8_t sharedKey[32]; os_memset(sharedKey, 0, sizeof(sharedKey));
     uint8_t ret = 0;
 
-    if (R_SUCCESS != (ret = burstKeys(dataBuffer, dataLength, NULL, NULL, sharedKey, outException))) {
+    if (R_SUCCESS != (ret = burst_keys(dataBuffer, dataLength, NULL, NULL, sharedKey, outException))) {
         explicit_bzero(sharedKey, sizeof(sharedKey));
         return ret;
     }
@@ -560,7 +560,7 @@ uint8_t signTxn(const uint8_t * const dataBuffer, const uint8_t dataLength, uint
     uint8_t messageSha256[32];
     cx_hash(&state.txnAuth.hashstate.header, CX_LAST, NULL, 0, messageSha256, sizeof(messageSha256));
 
-    signMsg(sharedKey, messageSha256, destBuffer); //is a void function, no ret value to check against
+    sign_msg(sharedKey, messageSha256, destBuffer); //is a void function, no ret value to check against
     //os_memcpy(destBuffer+32, messageSha256, 32);
     
     //clear

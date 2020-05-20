@@ -82,12 +82,12 @@ void showAddressHandlerHelper(const uint8_t p1, const uint8_t p2, const uint8_t 
 
     uint8_t publicKey[32]; os_memset(publicKey, 0, sizeof(publicKey));
 
-    uint8_t ret = burstKeys(dataBuffer, dataLength, 0, publicKey, 0, &exception);
+    uint8_t ret = burst_keys(dataBuffer, dataLength, 0, publicKey, 0, &exception);
 
     if (R_SUCCESS == ret) {
         os_memset(screenContent, 0, sizeof(screenContent));
         snprintf(screenContent, sizeof(screenContent), APP_PREFIX);
-        reedSolomonEncode(publicKeyToId(publicKey), screenContent + strlen(screenContent));
+        reedSolomonEncode(public_key_to_id(publicKey), screenContent + strlen(screenContent));
         showScreen();
         *flags |= IO_ASYNCH_REPLY;
         G_io_apdu_buffer[(*tx)++] = R_SUCCESS;

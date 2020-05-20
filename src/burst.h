@@ -15,23 +15,17 @@
 *  limitations under the License.
 ********************************************************************************/
 
-#if defined(TARGET_NANOS)
-    unsigned int makeTextGoAround_preprocessor(bagl_element_t * const element);
-#endif
 
-uint64_t publicKeyToId(const uint8_t * const publicKey);
-uint8_t burstKeys(const uint8_t * const dataBuffer, const uint8_t dataLength, uint8_t * const privKeyOut, uint8_t * const publicKeyOut,
+uint64_t public_key_to_id(const uint8_t * const publicKey);
+
+uint8_t burst_keys(const uint8_t * const dataBuffer, const uint8_t dataLength, uint8_t * const privKeyOut, uint8_t * const publicKeyOut,
     uint8_t * const sharedKeyOut, uint16_t * const exceptionOut);
 
-void signMsg(uint8_t * const sharedKey, const uint8_t * const msgSha256, uint8_t * const sig);
+void sign_msg(uint8_t * const sharedKey, const uint8_t * const msgSha256, uint8_t * const sig);
 
 void ui_idle();
 void ui_signing();
 bool check_canary();
-
-uint8_t getSharedEncryptionKey(const uint8_t * const dataBuffer, const uint8_t dataLength, const uint8_t* const targetPublicKey, 
-                                const uint8_t * const nonce, uint16_t * const exceptionOut, uint8_t * const aesKeyOut);
-
 
 //This is the state object that authAndSignTxn uses
 typedef struct {

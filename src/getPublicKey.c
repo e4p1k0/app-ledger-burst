@@ -33,7 +33,7 @@
     API:
 
         P1: P1_GET_PUBLIC_KEY:
-        dataBuffer: derivation path (uint32) * 5
+        dataBuffer: derivation path (uint32) * 3
         returns:    32 byte public key
 
 */
@@ -47,8 +47,8 @@ void getPublicKeyHandlerHelper(const uint8_t p1, const uint8_t p2, const uint8_t
     uint8_t publicKey[32];
     uint16_t exception = 0;
 
-    uint8_t ret = burstKeys(dataBuffer, dataLength, 0, publicKey, 0, &exception);
-    // uint8_t ret = burstKeys(dataBuffer, dataLength, publicKey, 0, 0, &exception); // DO NOT COMMIT THIS LINE!!!, used for testing only, to send the privatekey to the client, private key should never be released
+    uint8_t ret = burst_keys(dataBuffer, dataLength, 0, publicKey, 0, &exception);
+    // uint8_t ret = burst_keys(dataBuffer, dataLength, publicKey, 0, 0, &exception); // DO NOT COMMIT THIS LINE!!!, used for testing only, to send the privatekey to the client, private key should never be released
 
     G_io_apdu_buffer[(*tx)++] = ret;
 

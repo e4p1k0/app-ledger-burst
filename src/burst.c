@@ -60,7 +60,7 @@ void sha256Buffer(const uint8_t * const bufferTohash, const uint16_t sizeOfBuffe
 //@param in: sharedKey private key for signing
 //@parma in: msgSha256 should point to a 32 byte sha256 of the message we are signing
 //@param out: sig should point to 64 bytes allocated to hold the signiture of the message
-void signMsg(uint8_t * const sharedKey, const uint8_t * const msgSha256, uint8_t * const sig) {
+void sign_msg(uint8_t * const sharedKey, const uint8_t * const msgSha256, uint8_t * const sig) {
 
     uint8_t x[32]; os_memset(x, 0, sizeof(x));
     uint8_t y[32]; os_memset(y, 0, sizeof(y));
@@ -102,7 +102,7 @@ void morph25519_e2m(uint8_t *montgomery, const uint8_t *y);
 //@param optional out: sharedKeyOut - 32 byte shared key for signing
 //@param out: exceptionOut - if the return code is R_EXCEPTION => exceptionOut will be filled with the Nano exception code
 //@returns: regular return values
-uint8_t burstKeys(const uint8_t * const dataBuffer, const uint8_t dataLength, uint8_t * const privKeyOut, uint8_t * const publicKeyOut,
+uint8_t burst_keys(const uint8_t * const dataBuffer, const uint8_t dataLength, uint8_t * const privKeyOut, uint8_t * const publicKeyOut,
     uint8_t * const sharedKeyOut, uint16_t * const exceptionOut) {
     
     uint32_t pathPrefix[] = PATH_PREFIX; //defined in Makefile
@@ -149,34 +149,10 @@ uint8_t burstKeys(const uint8_t * const dataBuffer, const uint8_t dataLength, ui
     return R_SUCCESS;
 }
 
-//Creates a shared AES encryption key one the matches the key related to the derivation path, the target public key and the nonce
-//@param derivationPath - the derivation path
-//@param derivationPathLengthInUints32 - kinda clear what this is
-//@param targetPublicKey - the 32 byte public key
-uint8_t getSharedEncryptionKey(const uint8_t * const dataBuffer, const uint8_t dataLength, const uint8_t* const targetPublicKey, 
-                                const uint8_t * const nonce, uint16_t * const exceptionOut, uint8_t * const aesKeyOut) {
-    
-    uint8_t keySeed[32]; os_memset(keySeed, 0, sizeof(keySeed));
-
-    uint8_t ret = burstKeys(dataBuffer, dataLength, keySeed, 0, 0, exceptionOut);
-    if (R_SUCCESS != ret)
-        return ret;
-
-    uint8_t sharedKey[32]; os_memset(sharedKey, 0, sizeof(sharedKey));
-
-    curve25519(sharedKey, keySeed, targetPublicKey); //should use only the first 32 bytes of keyseed
-    
-    for (uint8_t i = 0; i < sizeof(sharedKey); i++)
-        sharedKey[i] ^= nonce[i];
-
-    sha256Buffer(sharedKey, sizeof(sharedKey), aesKeyOut);
-
-    return R_SUCCESS;
-}
 
 //param: publicKey should point to a 32 byte public key buffer
 //returns: a 64bit public key id, used later with reedsolomon to create BURST addresses
-uint64_t publicKeyToId(const uint8_t * const publicKey) {
+uint64_t public_key_to_id(const uint8_t * const publicKey) {
         
     uint8_t tempSha[32];
     sha256Buffer(publicKey, 32, tempSha);

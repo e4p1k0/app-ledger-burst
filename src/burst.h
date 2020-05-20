@@ -32,7 +32,7 @@ typedef struct {
 
 	bool txnAuthorized;                                    //This most important bool, means the user confirmed the txn content via the dialog and we can sign the current TXN
 
-    uint8_t readBuffer[512];                               //This is where unparsed temp buffer data is kept, since we do streamed parsing we have to have it here
+    uint8_t readBuffer[256];                               //This is where unparsed temp buffer data is kept, since we do streamed parsing we have to have it here
     uint16_t readBufferEndPos;                             //Index of the last byte in readBuffer
     uint16_t readBufferReadOffset;                         //Index of the first byte in readBuffer
     uint16_t numBytesRead;                                 //The total number of bytes parsed up until now

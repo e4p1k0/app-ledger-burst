@@ -27,23 +27,28 @@
 #include "config.h"
 #include "burst.h"
 
+// Flag if we are waiting for the user response or not
+uint8_t waitingUser;
+// The screen content (with the user address)
+char screenContent[27];
 
 //done button callback
 unsigned int doneButton(const bagl_element_t *e) {
     
     UNUSED(e);
 
-    G_io_apdu_buffer[0] = R_SUCCESS;
-    G_io_apdu_buffer[1] = 0x90;
-    G_io_apdu_buffer[2] = 0x00;
-    io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, 3);
+    if(waitingUser) {
+        G_io_apdu_buffer[0] = R_SUCCESS;
+        G_io_apdu_buffer[1] = 0x90;
+        G_io_apdu_buffer[2] = 0x00;
+        io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, 3);
+    }
     
     ui_idle();  // redraw ui
     return 0; // DO NOT REDRAW THE BUTTON
 }
 
 //Defenition of the UI for this handler
-char screenContent[27];
 UX_STEP_VALID(saFlowPage1, 
     bnnn_paging,
     doneButton(NULL),
@@ -76,7 +81,7 @@ void reedSolomonEncode(const uint64_t inp, char * const output);
 void showAddressHandlerHelper(const uint8_t p1, const uint8_t p2, const uint8_t * const dataBuffer, const uint8_t dataLength,
         uint8_t * const flags, uint8_t * const tx) {
 
-    UNUSED(p1); UNUSED(p2);
+    UNUSED(p2);
 
     uint16_t exception = 0;
 
@@ -89,7 +94,12 @@ void showAddressHandlerHelper(const uint8_t p1, const uint8_t p2, const uint8_t 
         snprintf(screenContent, sizeof(screenContent), APP_PREFIX);
         reedSolomonEncode(public_key_to_id(publicKey), screenContent + strlen(screenContent));
         showScreen();
-        *flags |= IO_ASYNCH_REPLY;
+
+        waitingUser = 0;
+        if(p1 == 0){ // block until the user responds only if p1 is zero
+            *flags |= IO_ASYNCH_REPLY;
+            waitingUser = 1;
+        }
         G_io_apdu_buffer[(*tx)++] = R_SUCCESS;
     } else {
         G_io_apdu_buffer[0] = ret;

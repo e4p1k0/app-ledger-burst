@@ -15,7 +15,15 @@ No information is stored on the device flash memory.
 
 ### Prepare the environment
 
-First, **update your Ledger Dongle to the latest firmware (>= 1.6.0)**.
+Only Linux is supported as a development OS. For Windows and MacOS users, a Linux VM is recommended.
+
+Using Ledger Live, **update your Ledger Dongle to the latest firmware (>= 1.6.0)**.
+
+Make sure you can connect to your device, add the following [udev rules](https://github.com/LedgerHQ/udev-rules)
+(or check for more details on [this Ledger article for details](https://support.ledger.com/hc/en-us/articles/115005165269-Fix-connection-issues)):
+```bash
+wget -q -O - https://raw.githubusercontent.com/LedgerHQ/udev-rules/master/add_udev_rules.sh | sudo bash
+```
 
 After that, install prerequisite packages:
 
@@ -70,17 +78,17 @@ implemented in the different .c files.
 
 Commands are in the format of
 
-    0x80 <command id byte> <p1 byte> <p2 byte> <sizeof buffer> <buffer>
+    0x80 <command id byte> <p1 byte> <p2 byte> <buffer length> <buffer>
 
 Response buffers are usually in the form of
 
     <return value byte> <buffer> <0x90> <0x00>
 
-`return_values.h` lists all possible return values
+`return_values.h` lists all possible return values for the Burstcoin app
 
 ## Compilation
 
-To compile call (remember to prepare your environment):
+To compile (remember to prepare your environment):
 ```bash
 make
 ```

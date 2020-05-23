@@ -396,13 +396,21 @@ uint8_t parseTxnData() {
     char *txTypeText = NULL;
     switch (state.txnAuth.txnTypeAndSubType) {
     case 0x1000:
+    case 0x1100:
+    case 0x1200:
     case 0x1001:
         txTypeText = "Ordinary Payment";
+        state.txnAuth.ux_flow = ux_flow_optionals;
+        
         if(state.txnAuth.txnTypeAndSubType == 0x1001){
             txTypeText = "Message Payment";
             ret = R_SEND_MORE_BYTES; // potentially need more bytes on another TX
         }
-        state.txnAuth.ux_flow = ux_flow_optionals;
+        if(state.txnAuth.txnTypeAndSubType == 0x1100 || state.txnAuth.txnTypeAndSubType == 0x1200){
+            txTypeText = "Multiout Payment";
+            state.txnAuth.ux_flow = ux_flow_1optional;
+            ret = R_SEND_MORE_BYTES; // potentially need more bytes on another TX
+        }
 
         // Window 1 is amount
         snprintf(state.txnAuth.optionalWindow1Title, sizeof(state.txnAuth.optionalWindow1Title), "%s", "BURST Amount");

@@ -27,23 +27,16 @@
 #include "config.h"
 #include "burst.h"
 
-// Flag if we are waiting for the user response or not
-uint8_t waitingUser;
+// Flag to also return the public key besides showing the address
+#define P1_SHOW_ADDRES_RETURN_KEY 0x01
+
 // The screen content (with the user address)
 char screenContent[27];
 
 //done button callback
-unsigned int doneButton(const bagl_element_t *e) {
-    
+unsigned int doneButton(const bagl_element_t *e) {    
     UNUSED(e);
 
-    if(waitingUser) {
-        G_io_apdu_buffer[0] = R_SUCCESS;
-        G_io_apdu_buffer[1] = 0x90;
-        G_io_apdu_buffer[2] = 0x00;
-        io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, 3);
-    }
-    
     ui_idle();  // redraw ui
     return 0; // DO NOT REDRAW THE BUTTON
 }
@@ -80,7 +73,7 @@ void reedSolomonEncode(const uint64_t inp, char * const output);
 
 void showAddressHandlerHelper(const uint8_t p1, const uint8_t p2, const uint8_t * const dataBuffer, const uint8_t dataLength,
         uint8_t * const flags, uint8_t * const tx) {
-
+    
     UNUSED(p2);
 
     uint16_t exception = 0;
@@ -95,12 +88,13 @@ void showAddressHandlerHelper(const uint8_t p1, const uint8_t p2, const uint8_t 
         reedSolomonEncode(public_key_to_id(publicKey), screenContent + strlen(screenContent));
         showScreen();
 
-        waitingUser = 0;
-        if(p1 == 0){ // block until the user responds only if p1 is zero
-            *flags |= IO_ASYNCH_REPLY;
-            waitingUser = 1;
-        }
         G_io_apdu_buffer[(*tx)++] = R_SUCCESS;
+
+        if((p1&P1_SHOW_ADDRES_RETURN_KEY) == P1_SHOW_ADDRES_RETURN_KEY){
+            // Also return the public key if asked
+            os_memmove(G_io_apdu_buffer + *tx, publicKey, sizeof(publicKey));
+            *tx += sizeof(publicKey);
+        }
     } else {
         G_io_apdu_buffer[0] = ret;
         *tx = 1;
@@ -114,8 +108,6 @@ void showAddressHandler(const uint8_t p1, const uint8_t p2, const uint8_t * cons
 
     showAddressHandlerHelper(p1, p2, dataBuffer, dataLength, flags, tx);
     
-    if (0 == ((*flags) & IO_ASYNCH_REPLY)) {
-        G_io_apdu_buffer[(*tx)++] = 0x90;
-        G_io_apdu_buffer[(*tx)++] = 0x00;
-    }
+    G_io_apdu_buffer[(*tx)++] = 0x90;
+    G_io_apdu_buffer[(*tx)++] = 0x00;
 }

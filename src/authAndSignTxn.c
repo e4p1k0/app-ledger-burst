@@ -396,7 +396,12 @@ uint8_t parseTxnData() {
     char *txTypeText = NULL;
     switch (state.txnAuth.txnTypeAndSubType) {
     case 0x1000:
-        txTypeText = "BURST Transfer";
+    case 0x1001:
+        txTypeText = "Ordinary Payment";
+        if(state.txnAuth.txnTypeAndSubType == 0x1001){
+            txTypeText = "Message Payment";
+            ret = R_SEND_MORE_BYTES; // potentially need more bytes on another TX
+        }
         state.txnAuth.ux_flow = ux_flow_optionals;
 
         // Window 1 is amount

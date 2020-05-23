@@ -11,6 +11,9 @@ No information is stored on the device flash memory.
 
 [Burst Wiki](https://burstwiki.org/en/), [Ledger Documentation Hub](https://ledger.readthedocs.io/en/latest/)
 
+## Supported Wallets
+ - [BTDEX](https://btdex.trade/), ([documentation](https://medium.com/@jjos2372/how-to-use-a-ledger-nano-s-with-btdex-to-secure-your-burst-and-trt-3522db9afc34))
+
 ## Developer Resources 
 
 ### Prepare the environment

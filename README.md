@@ -20,7 +20,7 @@ Only Linux is supported as a development OS. For Windows and MacOS users, a Linu
 Using Ledger Live, **update your Ledger Dongle to the latest firmware (>= 1.6.0)**.
 
 Make sure you can connect to your device, add the following [udev rules](https://github.com/LedgerHQ/udev-rules)
-(or check for more details on [this Ledger article for details](https://support.ledger.com/hc/en-us/articles/115005165269-Fix-connection-issues)):
+(or check for more details on [this Ledger article](https://support.ledger.com/hc/en-us/articles/115005165269-Fix-connection-issues)):
 ```bash
 wget -q -O - https://raw.githubusercontent.com/LedgerHQ/udev-rules/master/add_udev_rules.sh | sudo bash
 ```
@@ -36,6 +36,13 @@ Now use the `prepare-devenv.sh` script to prepare a local development environmen
 ```bash
 # (x or s, depending on your device)
 source prepare-devenv.sh s
+```
+
+### Test the app
+
+After loading the app on your device, run the test script and *authorize* the transactions on the device:
+```bash
+python test.py
 ```
 
 ### Enable Log Messages (optional)
@@ -74,17 +81,21 @@ The code flow starts at burst_main (`main.c`) which uses a global try/catch to p
 The code loops on io_exchange waiting for the next command buffer, then calling the appropriate handler function 
 implemented in the different .c files.
 
-## APDU Protocol
+## How to interact with the device (APDU Protocol)
 
 Commands are in the format of
-
+```
     0x80 <command id byte> <p1 byte> <p2 byte> <buffer length> <buffer>
+```
 
 Response buffers are usually in the form of
-
+```
     <return value byte> <buffer> <0x90> <0x00>
+```
 
 `return_values.h` lists all possible return values for the Burstcoin app
+
+Use the `test.py` code as a starting point for your application. You will find the commands for getting the publick key, signing transactions, etc.
 
 ## Compilation
 

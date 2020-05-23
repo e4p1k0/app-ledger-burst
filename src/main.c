@@ -63,20 +63,6 @@ const ux_flow_step_t * const ux_idle_flow [] = {
   FLOW_END_STEP,
 };
 
-UX_STEP_NOCB(
-    ux_signing_flow_1_step, 
-    pnn, 
-    {
-	  &C_icon_key,
-      "Signing the",
-      "transaction",
-    });
-const ux_flow_step_t * const ux_signing_flow [] = {
-  &ux_signing_flow_1_step,
-  FLOW_END_STEP,
-};
-
-
 // ui_idle displays the main menu. Note that your app isn't required to use a
 // menu as its idle screen; you can define your own completely custom screen.
 void ui_idle() {
@@ -86,6 +72,28 @@ void ui_idle() {
     }
     ux_flow_init(0, ux_idle_flow, NULL);
 }
+
+UX_STEP_NOCB(
+    ux_signing_flow_1_step, 
+    pnn, 
+    {
+	  &C_icon_key,
+      "Signing the",
+      "transaction",
+    });
+UX_STEP_VALID(
+    ux_signing_flow_back,
+    pb,
+    ui_idle(),
+    {
+      &C_icon_back,
+      "Back",
+    });
+const ux_flow_step_t * const ux_signing_flow [] = {
+  &ux_signing_flow_1_step,
+  &ux_signing_flow_back,
+  FLOW_END_STEP,
+};
 
 void ui_signing() {
     // reserve a display stack slot if none yet

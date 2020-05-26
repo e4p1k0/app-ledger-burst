@@ -41,6 +41,18 @@ Now use the `prepare-devenv.sh` script to prepare a local development environmen
 source prepare-devenv.sh s
 ```
 
+### Compile the code and load
+
+To compile:
+```bash
+make
+```
+
+To compile and upload the app to the Ledger device:
+```bash
+make load
+```
+
 ### Test the app
 
 After loading the app on your device, run the test script and *authorize* the transactions on the device:
@@ -99,18 +111,6 @@ Response buffers are usually in the form of
 `return_values.h` lists all possible return values for the Burstcoin app
 
 Use the `test.py` code as a starting point for your application. You will find the commands for getting the publick key, signing transactions, etc.
-
-## Compilation
-
-To compile (remember to prepare your environment):
-```bash
-make
-```
-
-To compile and upload to the Ledger device:
-```bash
-make load
-```
 
 ### Stack Overflow Canary
 

@@ -39,7 +39,7 @@ states_t state;
 void sha256TwoBuffers(const uint8_t * const bufferTohash1, const uint16_t sizeOfBuffer1, const uint8_t * const bufferTohash2, const uint16_t sizeOfBuffer2, uint8_t * const output) {
     cx_sha256_t shaContext;
 
-    os_memset(output, 0, 32);
+    memset(output, 0, 32);
     cx_sha256_init(&shaContext); //return value has no info
 
     cx_hash(&shaContext.header, 0, bufferTohash1, sizeOfBuffer1, output, 32);
@@ -62,9 +62,9 @@ void sha256Buffer(const uint8_t * const bufferTohash, const uint16_t sizeOfBuffe
 //@param out: sig should point to 64 bytes allocated to hold the signiture of the message
 void sign_msg(uint8_t * const sharedKey, const uint8_t * const msgSha256, uint8_t * const sig) {
 
-    uint8_t x[32]; os_memset(x, 0, sizeof(x));
-    uint8_t y[32]; os_memset(y, 0, sizeof(y));
-    uint8_t h[32]; os_memset(h, 0, sizeof(h));
+    uint8_t x[32]; memset(x, 0, sizeof(x));
+    uint8_t y[32]; memset(y, 0, sizeof(y));
+    uint8_t h[32]; memset(h, 0, sizeof(h));
 
     // Get x = hash(m, s)
     cx_sha256_init(&state.txnAuth.hashstate);
@@ -80,7 +80,7 @@ void sign_msg(uint8_t * const sharedKey, const uint8_t * const msgSha256, uint8_
     cx_hash(&state.txnAuth.hashstate.header, CX_LAST, y, 32, h, 32);
 
     // copy h first because sign25519 screws with parameters
-    os_memcpy(sig+32, h, 32);
+    memcpy(sig+32, h, 32);
     sign25519(sig, h, x, sharedKey);
 
     // clear sensitive data
@@ -107,15 +107,15 @@ uint8_t burst_keys(const uint8_t * const dataBuffer, const uint8_t dataLength, u
     
     uint32_t pathPrefix[] = PATH_PREFIX; //defined in Makefile
 
-    uint8_t publicKey[32]; os_memset(publicKey, 0, sizeof(publicKey));
-    uint8_t privKey[32]; os_memset(privKey, 0, sizeof(privKey));
+    uint8_t publicKey[32]; memset(publicKey, 0, sizeof(publicKey));
+    uint8_t privKey[32]; memset(privKey, 0, sizeof(privKey));
 
     if(dataLength < 3)
         return R_NOT_ENOUGH_DERIVATION_INDEXES;
 
     // BURST keypath of 44'/30'/account'/change'/index'
-    uint32_t derivationPath[5]; os_memset(derivationPath, 0, sizeof(derivationPath));
-    os_memmove(derivationPath, pathPrefix, 2 * sizeof(uint32_t));
+    uint32_t derivationPath[5]; memset(derivationPath, 0, sizeof(derivationPath));
+    memmove(derivationPath, pathPrefix, 2 * sizeof(uint32_t));
     derivationPath[2] = dataBuffer[0] | 0x80000000; // account
     derivationPath[3] = dataBuffer[1] | 0x80000000; // change
     derivationPath[4] = dataBuffer[2] | 0x80000000; // index
@@ -129,10 +129,10 @@ uint8_t burst_keys(const uint8_t * const dataBuffer, const uint8_t dataLength, u
                 }
 
                 if (0 != publicKeyOut) {
-                    os_memmove(publicKeyOut, publicKey, 32);
+                    memmove(publicKeyOut, publicKey, 32);
                 }
                 if (0 != privKeyOut) {
-                    os_memmove(privKeyOut, privKey, 32);
+                    memmove(privKeyOut, privKey, 32);
                 }
             }
             CATCH_OTHER(exception) {

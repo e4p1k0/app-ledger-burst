@@ -337,19 +337,19 @@ void addRecipientText() {
 
 // Reads a uint8_t from buffer
 void read_u8(uint8_t *val, uint8_t **ptr){
-    os_memmove(val, *ptr, sizeof(uint8_t));
+    memmove(val, *ptr, sizeof(uint8_t));
     *ptr += sizeof(uint8_t);
 }
 
 // Reads a uint16_t from buffer
 void read_u16(uint16_t *val, uint8_t **ptr){
-    os_memmove(val, *ptr, sizeof(uint16_t));
+    memmove(val, *ptr, sizeof(uint16_t));
     *ptr += sizeof(uint16_t);
 }
 
 // Reads a uint64_t from buffer and put the resulting value on val
 void read_u64(uint64_t *val, uint8_t **ptr){
-    os_memmove(val, *ptr, sizeof(uint64_t));
+    memmove(val, *ptr, sizeof(uint64_t));
     *ptr += sizeof(uint64_t);
 }
 
@@ -428,9 +428,9 @@ uint8_t parseTxnData() {
         if (ptr == 0)
             return R_TXN_SIZE_TOO_SMALL;
         ptr += 1; //version
-        os_memmove(&(state.txnAuth.attachmentTempInt64Num1), ptr, sizeof(state.txnAuth.attachmentTempInt64Num1)); // assetID
+        memmove(&(state.txnAuth.attachmentTempInt64Num1), ptr, sizeof(state.txnAuth.attachmentTempInt64Num1)); // assetID
         ptr += sizeof(state.txnAuth.attachmentTempInt64Num1);
-        os_memmove(&(state.txnAuth.attachmentTempInt64Num2), ptr, sizeof(state.txnAuth.attachmentTempInt64Num2)); // quantity
+        memmove(&(state.txnAuth.attachmentTempInt64Num2), ptr, sizeof(state.txnAuth.attachmentTempInt64Num2)); // quantity
         ptr += sizeof(state.txnAuth.attachmentTempInt64Num2);
 
         if(state.txnAuth.attachmentTempInt64Num1 == TRT_TOKEN){
@@ -459,11 +459,11 @@ uint8_t parseTxnData() {
             return R_TXN_SIZE_TOO_SMALL;
         ptr += 1; //version
 
-        os_memmove(&(state.txnAuth.attachmentTempInt64Num1), ptr, sizeof(state.txnAuth.attachmentTempInt64Num1)); // assetID
+        memmove(&(state.txnAuth.attachmentTempInt64Num1), ptr, sizeof(state.txnAuth.attachmentTempInt64Num1)); // assetID
         ptr += sizeof(state.txnAuth.attachmentTempInt64Num1);
-        os_memmove(&(state.txnAuth.attachmentTempInt64Num2), ptr, sizeof(state.txnAuth.attachmentTempInt64Num2)); // quantity
+        memmove(&(state.txnAuth.attachmentTempInt64Num2), ptr, sizeof(state.txnAuth.attachmentTempInt64Num2)); // quantity
         ptr += sizeof(state.txnAuth.attachmentTempInt64Num2);
-        os_memmove(&(state.txnAuth.attachmentTempInt64Num3), ptr, sizeof(state.txnAuth.attachmentTempInt64Num3)); // price
+        memmove(&(state.txnAuth.attachmentTempInt64Num3), ptr, sizeof(state.txnAuth.attachmentTempInt64Num3)); // price
         ptr += sizeof(state.txnAuth.attachmentTempInt64Num3);
 
         if(state.txnAuth.attachmentTempInt64Num1 == TRT_TOKEN){
@@ -499,7 +499,7 @@ uint8_t parseTxnData() {
         if (ptr == 0)
             return R_TXN_SIZE_TOO_SMALL;
         ptr += 1; //version
-        os_memmove(&(state.txnAuth.attachmentTempInt64Num1), ptr, sizeof(state.txnAuth.attachmentTempInt64Num1)); // assetID
+        memmove(&(state.txnAuth.attachmentTempInt64Num1), ptr, sizeof(state.txnAuth.attachmentTempInt64Num1)); // assetID
         ptr += sizeof(state.txnAuth.attachmentTempInt64Num1);
 
         // Window 1 is order ID
@@ -548,7 +548,7 @@ uint8_t parseReferencedTxn() {
 void addToReadBuffer(const uint8_t * const newData, const uint8_t numBytes) {
     cx_hash(&state.txnAuth.hashstate.header, 0, newData, numBytes, 0, 0);
 
-    os_memcpy(state.txnAuth.readBuffer, newData, numBytes);
+    memcpy(state.txnAuth.readBuffer, newData, numBytes);
     state.txnAuth.readBufferReadOffset = 0;
     state.txnAuth.readBufferEndPos = numBytes;
 }
@@ -561,7 +561,7 @@ void addToReadBuffer(const uint8_t * const newData, const uint8_t numBytes) {
 
 uint8_t signTxn(const uint8_t * const dataBuffer, const uint8_t dataLength, uint8_t * const destBuffer, uint16_t * const outException) {
 
-    uint8_t sharedKey[32]; os_memset(sharedKey, 0, sizeof(sharedKey));
+    uint8_t sharedKey[32]; memset(sharedKey, 0, sizeof(sharedKey));
     uint8_t ret = 0;
 
     if (R_SUCCESS != (ret = burst_keys(dataBuffer, dataLength, NULL, NULL, sharedKey, outException))) {
@@ -574,7 +574,7 @@ uint8_t signTxn(const uint8_t * const dataBuffer, const uint8_t dataLength, uint
     cx_hash(&state.txnAuth.hashstate.header, CX_LAST, NULL, 0, messageSha256, sizeof(messageSha256));
 
     sign_msg(sharedKey, messageSha256, destBuffer); //is a void function, no ret value to check against
-    //os_memcpy(destBuffer+32, messageSha256, 32);
+    //memcpy(destBuffer+32, messageSha256, 32);
     
     //clear
     explicit_bzero(messageSha256, sizeof(messageSha256));

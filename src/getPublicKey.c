@@ -54,7 +54,7 @@ void getPublicKeyHandlerHelper(const uint8_t p1, const uint8_t p2, const uint8_t
 
     if (R_SUCCESS == ret) {
         
-        os_memmove(G_io_apdu_buffer + *tx, publicKey, sizeof(publicKey));
+        memmove(G_io_apdu_buffer + *tx, publicKey, sizeof(publicKey));
         *tx += sizeof(publicKey);
 
     } else if (R_KEY_DERIVATION_EX == ret) {  

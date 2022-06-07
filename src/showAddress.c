@@ -78,12 +78,12 @@ void showAddressHandlerHelper(const uint8_t p1, const uint8_t p2, const uint8_t 
 
     uint16_t exception = 0;
 
-    uint8_t publicKey[32]; os_memset(publicKey, 0, sizeof(publicKey));
+    uint8_t publicKey[32]; memset(publicKey, 0, sizeof(publicKey));
 
     uint8_t ret = burst_keys(dataBuffer, dataLength, 0, publicKey, 0, &exception);
 
     if (R_SUCCESS == ret) {
-        os_memset(screenContent, 0, sizeof(screenContent));
+        memset(screenContent, 0, sizeof(screenContent));
         snprintf(screenContent, sizeof(screenContent), APP_PREFIX);
         reedSolomonEncode(public_key_to_id(publicKey), screenContent + strlen(screenContent));
         showScreen();
@@ -92,7 +92,7 @@ void showAddressHandlerHelper(const uint8_t p1, const uint8_t p2, const uint8_t 
 
         if((p1&P1_SHOW_ADDRES_RETURN_KEY) == P1_SHOW_ADDRES_RETURN_KEY){
             // Also return the public key if asked
-            os_memmove(G_io_apdu_buffer + *tx, publicKey, sizeof(publicKey));
+            memmove(G_io_apdu_buffer + *tx, publicKey, sizeof(publicKey));
             *tx += sizeof(publicKey);
         }
     } else {

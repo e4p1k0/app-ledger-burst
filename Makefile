@@ -28,10 +28,10 @@ endif
 include $(BOLOS_SDK)/Makefile.defines
 
 APPNAME = Burstcoin
-DEFINES = "PATH_PREFIX={44|0x80000000,30|0x80000000}"
+DEFINES += "PATH_PREFIX={44|0x80000000,30|0x80000000}"
 PATH_PREFIX = "44'/30'"
 DEFINES += APP_PREFIX=\"BURST-\"
-    
+
 ifeq ($(TARGET_NAME),TARGET_NANOX)
     ICONNAME = icons/nanox_app_burst.gif
 else
@@ -46,22 +46,22 @@ $(info Building $(APPNAME) app...)
 
 #This inits the SDK_SOURCE_PATH variable, moving this will screw up the build, because the next if does +=
 SDK_SOURCE_PATH = lib_stusb lib_stusb_impl lib_u2f lib_ux
-APP_LOAD_PARAMS = --curve ed25519 $(COMMON_LOAD_PARAMS) 
+APP_LOAD_PARAMS = --curve ed25519 $(COMMON_LOAD_PARAMS)
 
 # Ledger: add the "Pending security review" disclaimer
 APP_LOAD_PARAMS += --tlvraw 9F:01
 
 ifeq ($(TARGET_NAME),TARGET_NANOX)
     SDK_SOURCE_PATH += lib_blewbxx lib_blewbxx_impl
-    
+
     # The --appFlags param gives permision to open bluetooth
     APP_LOAD_PARAMS += --appFlags 0x0200
-    
+
     DEFINES += HAVE_BLE BLE_COMMAND_TIMEOUT_MS=2000
     DEFINES += IO_SEPROXYHAL_BUFFER_SIZE_B=300
     DEFINES += HAVE_BLE BLE_COMMAND_TIMEOUT_MS=2000
     DEFINES += HAVE_BLE_APDU # basic ledger apdu transport over BLE
-    
+
     DEFINES += HAVE_GLO096
     DEFINES += BAGL_WIDTH=128 BAGL_HEIGHT=64
 	DEFINES += HAVE_BAGL_ELLIPSIS # long label truncation feature
@@ -71,7 +71,7 @@ ifeq ($(TARGET_NAME),TARGET_NANOX)
 else
     # Since we don't have bluetooth in NanoS we set --appFlags to 0
     APP_LOAD_PARAMS += --appFlags 0x0000
-    
+
     DEFINES += IO_SEPROXYHAL_BUFFER_SIZE_B=128
 endif
 
@@ -172,4 +172,3 @@ include $(BOLOS_SDK)/Makefile.glyphs
 include $(BOLOS_SDK)/Makefile.rules
 
 dep/%.d: %.c Makefile
-

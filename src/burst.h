@@ -15,6 +15,9 @@
 *  limitations under the License.
 ********************************************************************************/
 
+#include "ux.h"
+#include "cx.h"
+#include "os.h"
 
 uint64_t public_key_to_id(const uint8_t * const publicKey);
 
@@ -48,7 +51,7 @@ typedef struct {
     uint64_t fee;                                          //What it says it is
 
    	int32_t attachmentTempInt32Num1, attachmentTempInt32Num2;    //Different attachments parse in different ways, they all need space in state, so this is how it's defined
-   	int64_t attachmentTempInt64Num1, attachmentTempInt64Num2, attachmentTempInt64Num3; 
+   	int64_t attachmentTempInt64Num1, attachmentTempInt64Num2, attachmentTempInt64Num3;
 
     char feeText[21];               //9,223,372,036,854,775,807 is the biggest number you can hold in uint64 + the dot + null terminator means the longest text is 20
     char txnTypeText[60];           //Aproximation of size

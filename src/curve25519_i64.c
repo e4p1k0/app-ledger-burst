@@ -6,6 +6,7 @@
  */
 
 #include <stdint.h>
+#include <string.h>
 #include "curve25519_i64.h"
 
 
@@ -137,7 +138,7 @@ static dstptr egcd32(dstptr x, dstptr y, dstptr a, dstptr b) {
     if (bn == 0)
       return x;
     mula32(y, x, temp, qn, -1);
-    
+
     qn = an - bn + 1;
     divmod(temp, a, an, b, bn);
     an = numsize(a, an);
@@ -565,21 +566,21 @@ static inline void x_to_y2(i25519 t, i25519 y2, const i25519 x) {
 void core25519(k25519 Px, k25519 s, const k25519 k, const k25519 Gx) {
   i25519 dx, x[2], z[2], t1, t2, t3, t4;
   unsigned i, j;
-  
+
   /* unpack the base */
   if (Gx)
     unpack25519(dx, Gx);
   else
     set25519(dx, 9);
-  
+
   /* 0G = point-at-infinity */
   set25519(x[0], 1);
   set25519(z[0], 0);
-  
+
   /* 1G = G */
   cpy25519(x[1], dx);
   set25519(z[1], 1);
-  
+
   for (i = 32; i--; ) {
     for (j = 8; j--; ) {
       /* swap arguments depending on bit */
@@ -589,7 +590,7 @@ void core25519(k25519 Px, k25519 s, const k25519 k, const k25519 Gx) {
       int32_t *const az = z[bit0];
       int32_t *const bx = x[bit1];
       int32_t *const bz = z[bit1];
-      
+
       /* a' = a + b  */
       /* b' = 2 b  */
       mont_prep(t1, t2, ax, az);
@@ -598,11 +599,11 @@ void core25519(k25519 Px, k25519 s, const k25519 k, const k25519 Gx) {
       mont_dbl(t1, t2, t3, t4, bx, bz);
     }
   }
-  
+
   recip25519(t1, z[0], 0);
   mul25519(dx, x[0], t1);
   pack25519(dx, Px);
-  
+
   /* calculate s such that s abs(P) = G  .. assumes G is std base point */
   if (s) {
     x_to_y2(t2, t1, dx);  /* t1 = Py^2  */
@@ -620,11 +621,11 @@ void core25519(k25519 Px, k25519 s, const k25519 k, const k25519 Gx) {
       cpy32(s, k);
     else      /* sign is -1, so negate  */
       mula_small(s, order_times_8, 0, k, 32, -1);
-    
+
     /* reduce s mod q
      * (is this needed?  do it just in case, it's fast anyway) */
     divmod((dstptr) t1, s, 32, order25519, 32);
-    
+
     /* take reciprocal of s mod q */
     cpy32((dstptr) t1, order25519);
     cpy32(s, egcd32((dstptr) x, (dstptr) z, s, (dstptr) t1));
@@ -683,17 +684,17 @@ void verify25519(pub25519 Y, const k25519 v, const k25519 h, const pub25519 P) {
   k25519 d;
   i25519 p[2], s[2], yx[3], yz[3], t1[3], t2[3];
   unsigned vi = 0, hi = 0, di = 0, nvh, i, j, k;
-  
+
   /* set p[0] to G and p[1] to P  */
-  
+
   set25519(p[0], 9);
   unpack25519(p[1], P);
-  
+
   /* set s[0] to P+G and s[1] to P-G  */
-  
+
   /* s[0] = (Py^2 + Gy^2 - 2 Py Gy)/(Px - Gx)^2 - Px - Gx - 486662  */
   /* s[1] = (Py^2 + Gy^2 + 2 Py Gy)/(Px - Gx)^2 - Px - Gx - 486662  */
-  
+
   x_to_y2(t1[0], t2[0], p[1]);  /* t2[0] = Py^2  */
   sqrt25519(t1[0], t2[0]);  /* t1[0] = Py or -Py  */
   j = is_negative(t1[0]);    /*      ... check which  */
@@ -713,8 +714,8 @@ void verify25519(pub25519 Y, const k25519 v, const k25519 h, const pub25519 P) {
   s[1][0] -= 9 + 486662;    /* s[1] = X(P-G)  */
   mul25519small(s[0], s[0], 1);  /* reduce s[0] */
   mul25519small(s[1], s[1], 1);  /* reduce s[1] */
-  
-  
+
+
   /* prepare the chain  */
   for (i = 0; i < 32; i++) {
     vi = (vi >> 8) ^ v[i] ^ (v[i] << 1);
@@ -730,9 +731,9 @@ void verify25519(pub25519 Y, const k25519 v, const k25519 h, const pub25519 P) {
     di ^= nvh & (di & 0x40) << 1;
     d[i] = di;
   }
-  
+
   di = ((nvh & (di & 0x80) << 1) ^ vi) >> 8;
-  
+
   /* initialize state */
   set25519(yx[0], 1);
   cpy25519(yx[1], p[di]);
@@ -740,43 +741,43 @@ void verify25519(pub25519 Y, const k25519 v, const k25519 h, const pub25519 P) {
   set25519(yz[0], 0);
   set25519(yz[1], 1);
   set25519(yz[2], 1);
-  
+
   /* y[0] is (even)P + (even)G
    * y[1] is (even)P + (odd)G  if current d-bit is 0
    * y[1] is (odd)P + (even)G  if current d-bit is 1
    * y[2] is (odd)P + (odd)G
    */
-  
+
   vi = 0;
   hi = 0;
-  
+
   /* and go for it! */
   for (i = 32; i--; ) {
     vi = (vi << 8) | v[i];
     hi = (hi << 8) | h[i];
     di = (di << 8) | d[i];
-    
+
     for (j = 8; j--; ) {
       mont_prep(t1[0], t2[0], yx[0], yz[0]);
       mont_prep(t1[1], t2[1], yx[1], yz[1]);
       mont_prep(t1[2], t2[2], yx[2], yz[2]);
-      
+
       k = ((vi ^ vi >> 1) >> j & 1)
       + ((hi ^ hi >> 1) >> j & 1);
       mont_dbl(yx[2], yz[2], t1[k], t2[k], yx[0], yz[0]);
-      
+
       k = (di >> j & 2) ^ ((di >> j & 1) << 1);
       mont_add(t1[1], t2[1], t1[k], t2[k], yx[1], yz[1],
                p[di >> j & 1]);
-      
+
       mont_add(t1[2], t2[2], t1[0], t2[0], yx[2], yz[2],
                s[((vi ^ hi) >> j & 2) >> 1]);
     }
   }
-  
+
   k = (vi & 1) + (hi & 1);
   recip25519(t1[0], yz[k], 0);
   mul25519(t1[1], yx[k], t1[0]);
-  
+
   pack25519(t1[1], Y);
 }

@@ -16,7 +16,7 @@
 ********************************************************************************/
 
 #include <os.h>
-
+#include <string.h>
 
 #define BASE_32_LENGTH 13
 #define BASE_10_LENGTH 20
@@ -56,7 +56,7 @@ void reedSolomonEncode(uint64_t inp, char * const output) {
 
     uint8_t p[] = {0, 0, 0, 0};
     for (int8_t i = BASE_32_LENGTH - 1; i >= 0; i--) {
-        
+
         uint8_t fb = plain_string_32[i] ^ p[3];
         p[3] = p[2] ^ gmult(30, fb);
         p[2] = p[1] ^ gmult(6, fb);
@@ -80,4 +80,3 @@ void reedSolomonEncode(uint64_t inp, char * const output) {
 
     output[stringIndex++] = 0;
 }
-
